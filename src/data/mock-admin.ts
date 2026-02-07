@@ -116,3 +116,95 @@ export const MOCK_SUBMISSIONS: MockSubmission[] = [
     ],
   },
 ];
+
+// --- Partner management (Manage Partners page) ---
+export type PartnerManagementStatus = "Active" | "Suspended" | "Archived" | "Featured";
+
+/** Partner IDs that are featured by default (1, 2, 7, 8) */
+export const FEATURED_PARTNER_IDS = new Set(["1", "2", "7", "8"]);
+
+/** Mock "last updated" dates per partner id (for table column) */
+export const PARTNER_LAST_UPDATED: Record<string, string> = {
+  "1": "2025-03-10",
+  "2": "2025-03-08",
+  "3": "2025-03-05",
+  "4": "2025-03-12",
+  "5": "2025-03-01",
+  "6": "2025-03-14",
+  "7": "2025-03-15",
+  "8": "2025-03-14",
+  "9": "2025-03-06",
+  "10": "2025-02-25",
+  "11": "2025-03-01",
+  "12": "2025-02-20",
+};
+
+// --- Review moderation (Moderate Reviews page) ---
+export type ReviewModerationStatus = "Pending" | "Approved" | "Flagged" | "Removed";
+
+export interface ReviewForModeration {
+  id: string;
+  partnerId: string;
+  partnerName: string;
+  partnerSlug: string;
+  rating: number;
+  text: string;
+  reviewerName: string;
+  whopName: string;
+  date: string;
+  moderationStatus: ReviewModerationStatus;
+  isDisputed?: boolean;
+  disputeReason?: string;
+}
+
+/** Build flattened reviews for moderation from mock partners + 2 extra mock flagged/disputed reviews */
+export function buildReviewsForModeration(partners: { id: string; name: string; slug: string; reviews: { rating: number; text: string; reviewerName: string; whopName: string; date: string }[] }[]): ReviewForModeration[] {
+  const list: ReviewForModeration[] = [];
+  let id = 1;
+  let pendingCount = 0;
+  for (const partner of partners) {
+    for (const r of partner.reviews) {
+      list.push({
+        id: `rev-${id++}`,
+        partnerId: partner.id,
+        partnerName: partner.name,
+        partnerSlug: partner.slug,
+        rating: r.rating,
+        text: r.text,
+        reviewerName: r.reviewerName,
+        whopName: r.whopName,
+        date: r.date,
+        moderationStatus: pendingCount < 2 ? "Pending" : "Approved",
+      });
+      pendingCount++;
+    }
+  }
+  list.push({
+    id: "rev-disputed",
+    partnerId: "1",
+    partnerName: "Whop Growth Labs",
+    partnerSlug: "whop-growth-labs",
+    rating: 1,
+    text: "Scam. Took my money and ghosted.",
+    reviewerName: "Anonymous",
+    whopName: "—",
+    date: "2025-03-11",
+    moderationStatus: "Pending",
+    isDisputed: true,
+    disputeReason: "Partner claims this review is from a competitor. No record of a client named Anonymous. Request removal.",
+  });
+  list.push({
+    id: "rev-flagged",
+    partnerId: "4",
+    partnerName: "AdScale Media",
+    partnerSlug: "adscale-media",
+    rating: 1,
+    text: "terrible service avoid",
+    reviewerName: "Bot123",
+    whopName: "—",
+    date: "2025-03-13",
+    moderationStatus: "Flagged",
+    isDisputed: false,
+  });
+  return list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+}
