@@ -1,17 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useRef } from "react";
 import { Heading, Text, Inset, Select } from "frosted-ui";
+import { Cross2Icon } from "@radix-ui/react-icons";
 import { mockPartners } from "@/data/mock-partners";
-import type { PartnerFilters, PartnerType, PriceRange } from "@/lib/types";
+import type { PartnerFilters, PartnerType } from "@/lib/types";
 import { CATEGORIES, CATEGORY_ICONS, PARTNER_TYPE_LABELS } from "@/lib/constants";
-import {
-  filterAndSortPartners,
-  getPartnerCountByCategory,
-  getFeaturedPartners,
-} from "@/lib/partners";
+import { getPartnerCountByCategory, getFeaturedPartners } from "@/lib/partners";
 import { useFilters } from "@/hooks/use-filters";
+import { useSearch } from "@/hooks/use-search";
 import { Navbar } from "@/components/ui/navbar";
 import { SearchBar } from "@/components/ui/search-bar";
 import { CategoryCard } from "@/components/ui/category-card";
@@ -26,82 +23,40 @@ const SORT_OPTIONS: { value: PartnerFilters["sortBy"]; label: string }[] = [
   { value: "recent", label: "Recently Added" },
 ];
 
-function parseFiltersFromSearchParams(params: ReturnType<typeof useSearchParams>): Partial<PartnerFilters> {
-  const search = params.get("search") ?? "";
-  const type = params.get("type") as PartnerType | "all" | null;
-  const category = params.get("category");
-  const categories: string[] = [];
-  if (category) categories.push(decodeURIComponent(category));
-  let i = 1;
-  while (params.get(`category_${i}`)) {
-    categories.push(decodeURIComponent(params.get(`category_${i}`)!));
-    i++;
-  }
-  const industry = params.get("industry");
-  const industries = industry ? [decodeURIComponent(industry)] : [];
-  const priceRange = (params.get("priceRange") as PriceRange | "all" | null) ?? "all";
-  const minRating = parseInt(params.get("minRating") ?? "0", 10) || 0;
-  const sortBy = (params.get("sortBy") as PartnerFilters["sortBy"]) ?? "relevance";
-
-  return {
-    search,
-    partnerType: type === "agency" || type === "service_provider" || type === "tech_partner" ? type : "all",
-    categories,
-    industries,
-    priceRange: priceRange === "$" || priceRange === "$$" || priceRange === "$$$" || priceRange === "$$$$" ? priceRange : "all",
-    minRating: Number.isFinite(minRating) && minRating >= 0 ? minRating : 0,
-    sortBy: SORT_OPTIONS.some((o) => o.value === sortBy) ? sortBy : "relevance",
-  };
-}
-
-function buildSearchParams(filters: PartnerFilters): URLSearchParams {
-  const p = new URLSearchParams();
-  if (filters.search) p.set("search", filters.search);
-  if (filters.partnerType !== "all") p.set("type", filters.partnerType);
-  if (filters.categories.length > 0) {
-    filters.categories.forEach((c, i) => p.set(i === 0 ? "category" : `category_${i}`, c));
-  }
-  if (filters.industries.length === 1) p.set("industry", filters.industries[0]);
-  if (filters.priceRange !== "all") p.set("priceRange", filters.priceRange);
-  if (filters.minRating > 0) p.set("minRating", String(filters.minRating));
-  if (filters.sortBy !== "relevance") p.set("sortBy", filters.sortBy);
-  return p;
-}
-
 export default function PartnersPage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
   const directoryRef = useRef<HTMLDivElement>(null);
+  const searchFromFilterRef = useRef(false);
 
-  const { filters, setFilters } = useFilters();
+  const {
+    filters,
+    setFilter,
+    clearFilters,
+    filteredPartners,
+    totalCount,
+  } = useFilters();
+
+  const { searchQuery, debouncedQuery, setSearchQuery } = useSearch(filters.search);
 
   useEffect(() => {
-    const parsed = parseFiltersFromSearchParams(searchParams);
-    setFilters(parsed);
-  }, [searchParams, setFilters]);
+    if (searchFromFilterRef.current) {
+      searchFromFilterRef.current = false;
+      return;
+    }
+    setSearchQuery(filters.search);
+  }, [filters.search, setSearchQuery]);
 
-  const updateFiltersAndUrl = useCallback(
-    (update: Partial<PartnerFilters>) => {
-      setFilters(update);
-      const next = { ...filters, ...update };
-      const query = buildSearchParams(next).toString();
-      const path = query ? `/partners?${query}` : "/partners";
-      router.replace(path, { scroll: false });
-    },
-    [filters, setFilters, router]
-  );
+  useEffect(() => {
+    if (debouncedQuery === filters.search) return;
+    searchFromFilterRef.current = true;
+    setFilter({ search: debouncedQuery });
+  }, [debouncedQuery, filters.search, setFilter]);
 
-  const filteredAndSorted = useMemo(
-    () => filterAndSortPartners(mockPartners, filters),
-    [filters]
-  );
-
-  const categoryCounts = useMemo(() => getPartnerCountByCategory(mockPartners), []);
-  const featuredPartners = useMemo(() => getFeaturedPartners(mockPartners, 4), []);
+  const categoryCounts = getPartnerCountByCategory(mockPartners);
+  const featuredPartners = getFeaturedPartners(mockPartners, 4);
 
   const handleCategoryClick = useCallback(
     (category: string) => {
-      updateFiltersAndUrl({
+      setFilter({
         categories: [category],
         partnerType: "all",
         industries: [],
@@ -110,18 +65,70 @@ export default function PartnersPage() {
       });
       directoryRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     },
-    [updateFiltersAndUrl]
+    [setFilter]
   );
 
   const handleQuickTypeClick = useCallback(
     (type: PartnerType | "all") => {
-      updateFiltersAndUrl({
-        partnerType: type,
-        categories: [],
+      setFilter({ partnerType: type, categories: [] });
+    },
+    [setFilter]
+  );
+
+  const removeCategory = useCallback(
+    (category: string) => {
+      setFilter({
+        categories: filters.categories.filter((c) => c !== category),
       });
     },
-    [updateFiltersAndUrl]
+    [filters.categories, setFilter]
   );
+
+  const removeIndustry = useCallback(
+    (industry: string) => {
+      setFilter({
+        industries: filters.industries.filter((i) => i !== industry),
+      });
+    },
+    [filters.industries, setFilter]
+  );
+
+  const activeFilterChips: { key: string; label: string; onRemove: () => void }[] = [];
+  if (filters.partnerType !== "all") {
+    activeFilterChips.push({
+      key: "type",
+      label: `Type: ${PARTNER_TYPE_LABELS[filters.partnerType]}`,
+      onRemove: () => setFilter({ partnerType: "all" }),
+    });
+  }
+  filters.categories.forEach((c) => {
+    activeFilterChips.push({
+      key: `cat-${c}`,
+      label: `Category: ${c}`,
+      onRemove: () => removeCategory(c),
+    });
+  });
+  filters.industries.forEach((i) => {
+    activeFilterChips.push({
+      key: `ind-${i}`,
+      label: `Industry: ${i}`,
+      onRemove: () => removeIndustry(i),
+    });
+  });
+  if (filters.priceRange !== "all") {
+    activeFilterChips.push({
+      key: "price",
+      label: `Price: ${filters.priceRange}`,
+      onRemove: () => setFilter({ priceRange: "all" }),
+    });
+  }
+  if (filters.minRating > 0) {
+    activeFilterChips.push({
+      key: "rating",
+      label: `Min. rating: ${filters.minRating}+`,
+      onRemove: () => setFilter({ minRating: 0 }),
+    });
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -144,8 +151,8 @@ export default function PartnersPage() {
             </Text>
             <div className="w-full max-w-[600px]">
               <SearchBar
-                value={filters.search}
-                onChange={(value) => updateFiltersAndUrl({ search: value })}
+                value={searchQuery}
+                onChange={setSearchQuery}
                 placeholder="Search by name, category, industry..."
               />
             </div>
@@ -227,19 +234,20 @@ export default function PartnersPage() {
             <div className="w-[280px] shrink-0 hidden lg:block">
               <FilterSidebar
                 filters={filters}
-                onFilterChange={(next) => updateFiltersAndUrl(next)}
+                onFilterChange={(next) => setFilter(next)}
+                allPartners={mockPartners}
               />
             </div>
 
             <div className="flex-1 min-w-0">
-              <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+              <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
                 <Text size="2" color="gray">
-                  Showing {filteredAndSorted.length} partner{filteredAndSorted.length !== 1 ? "s" : ""}
+                  Showing {totalCount} partner{totalCount !== 1 ? "s" : ""}
                 </Text>
                 <Select.Root
                   value={filters.sortBy}
                   onValueChange={(value) =>
-                    updateFiltersAndUrl({ sortBy: value as PartnerFilters["sortBy"] })
+                    setFilter({ sortBy: value as PartnerFilters["sortBy"] })
                   }
                 >
                   <Select.Trigger size="2" variant="surface" color="gray" />
@@ -253,8 +261,33 @@ export default function PartnersPage() {
                 </Select.Root>
               </div>
 
-              {filteredAndSorted.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 px-4 rounded-lg border border-gray-6 bg-gray-2/50 text-center">
+              {activeFilterChips.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {activeFilterChips.map(({ key, label, onRemove }) => (
+                    <span
+                      key={key}
+                      className="inline-flex items-center gap-1 rounded-full bg-gray-4 px-3 py-1 text-sm text-gray-12"
+                    >
+                      {label}
+                      <button
+                        type="button"
+                        onClick={onRemove}
+                        className="rounded-full p-0.5 hover:bg-gray-6 transition-colors"
+                        aria-label={`Remove ${label}`}
+                      >
+                        <Cross2Icon width={12} height={12} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {totalCount === 0 ? (
+                <div
+                  className="partners-result-fade flex flex-col items-center justify-center py-16 px-4 rounded-lg border border-gray-6 bg-gray-2/50 text-center"
+                  role="status"
+                  aria-live="polite"
+                >
                   <div
                     className="w-24 h-24 rounded-full bg-gray-4 flex items-center justify-center mb-4"
                     aria-hidden
@@ -274,15 +307,25 @@ export default function PartnersPage() {
                     </svg>
                   </div>
                   <Heading size="4" className="mb-2">
-                    No partners match your filters
+                    No partners found
                   </Heading>
-                  <Text size="2" color="gray">
-                    Try broadening your search or clear some filters.
+                  <Text size="2" color="gray" className="mb-6">
+                    Try adjusting your filters or search terms.
                   </Text>
+                  <button
+                    type="button"
+                    onClick={clearFilters}
+                    className="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium bg-orange-9 text-white hover:bg-orange-10 transition-colors"
+                  >
+                    Clear Filters
+                  </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {filteredAndSorted.map((partner) => (
+                <div
+                  className="partners-result-fade grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
+                  key={`${filters.search}-${filters.sortBy}-${filters.categories.join(",")}-${filters.industries.join(",")}-${filters.partnerType}-${filters.priceRange}-${filters.minRating}`}
+                >
+                  {filteredPartners.map((partner) => (
                     <PartnerCard key={partner.id} partner={partner} />
                   ))}
                 </div>

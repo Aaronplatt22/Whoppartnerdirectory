@@ -1,20 +1,35 @@
 import type { Partner, PartnerFilters } from "./types";
 import { CATEGORIES } from "./constants";
 
-function matchesSearch(partner: Partner, query: string): boolean {
-  if (!query.trim()) return true;
-  const q = query.toLowerCase().trim();
-  const searchable = [
+/** Build searchable text for a partner (case-insensitive). */
+function getSearchableText(partner: Partner): string {
+  return [
     partner.name,
     partner.tagline,
     partner.description,
     ...partner.categories,
     ...partner.industries,
-  ].join(" ").toLowerCase();
-  return searchable.includes(q) || searchable.split(/\s+/).some((word) => word.startsWith(q));
+  ]
+    .join(" ")
+    .toLowerCase();
 }
 
-function matchesFilters(partner: Partner, filters: PartnerFilters): boolean {
+/**
+ * Fuzzy match: query is split by words; each word must match somewhere
+ * (case-insensitive, word boundary or start-of-token).
+ */
+export function matchesSearch(partner: Partner, query: string): boolean {
+  const trimmed = query.trim();
+  if (!trimmed) return true;
+  const words = trimmed.toLowerCase().split(/\s+/).filter(Boolean);
+  const searchable = getSearchableText(partner);
+  return words.every((word) => {
+    if (searchable.includes(word)) return true;
+    return searchable.split(/\s+/).some((token) => token.startsWith(word) || word.startsWith(token));
+  });
+}
+
+export function matchesFilters(partner: Partner, filters: PartnerFilters): boolean {
   if (filters.partnerType !== "all" && partner.partnerType !== filters.partnerType) return false;
   if (filters.categories.length > 0 && !filters.categories.some((c) => partner.categories.includes(c))) return false;
   if (filters.industries.length > 0 && !filters.industries.some((i) => partner.industries.includes(i))) return false;
@@ -29,6 +44,20 @@ export function filterPartners(partners: Partner[], filters: PartnerFilters): Pa
   );
 }
 
+/** Relevance score for sorting: higher = better match when search is active. */
+function relevanceScore(partner: Partner, searchQuery: string): number {
+  if (!searchQuery.trim()) return 0;
+  const q = searchQuery.toLowerCase().trim();
+  const words = q.split(/\s+/).filter(Boolean);
+  const text = getSearchableText(partner);
+  let score = 0;
+  for (const word of words) {
+    if (text.includes(word)) score += 2;
+    else if (text.split(/\s+/).some((t) => t.startsWith(word) || word.startsWith(t))) score += 1;
+  }
+  return score;
+}
+
 export function sortPartners(
   partners: Partner[],
   sortBy: PartnerFilters["sortBy"],
@@ -41,20 +70,23 @@ export function sortPartners(
     case "reviews":
       return copy.sort((a, b) => b.reviewCount - a.reviewCount);
     case "recent":
-      return copy.sort(
-        (a, b) => new Date(b.lastEngagementDate).getTime() - new Date(a.lastEngagementDate).getTime()
-      );
+      return copy.sort((a, b) => parseInt(b.id, 10) - parseInt(a.id, 10));
     case "relevance":
     default: {
-      if (!searchQuery.trim()) return copy;
-      const q = searchQuery.toLowerCase();
+      if (searchQuery.trim()) {
+        return copy.sort((a, b) => {
+          const aScore = relevanceScore(a, searchQuery);
+          const bScore = relevanceScore(b, searchQuery);
+          if (bScore !== aScore) return bScore - aScore;
+          return b.avgRating - a.avgRating;
+        });
+      }
+      // No search: featured first (Top Performer), then by reviewCount
       return copy.sort((a, b) => {
-        const aMatch = [a.name, a.tagline, a.description].join(" ").toLowerCase();
-        const bMatch = [b.name, b.tagline, b.description].join(" ").toLowerCase();
-        const aScore = aMatch.includes(q) ? 1 : 0;
-        const bScore = bMatch.includes(q) ? 1 : 0;
-        if (bScore !== aScore) return bScore - aScore;
-        return b.avgRating - a.avgRating;
+        const aFeatured = a.internalTags.includes("Top Performer") ? 1 : 0;
+        const bFeatured = b.internalTags.includes("Top Performer") ? 1 : 0;
+        if (bFeatured !== aFeatured) return bFeatured - aFeatured;
+        return b.reviewCount - a.reviewCount;
       });
     }
   }
@@ -80,4 +112,51 @@ export function getFeaturedPartners(partners: Partner[], limit = 4): Partner[] {
   return partners
     .filter((p) => p.internalTags.includes("Top Performer"))
     .slice(0, limit);
+}
+
+/** Count partners that would match if we only changed one filter dimension. */
+export function countWithPartnerType(
+  partners: Partner[],
+  filters: PartnerFilters,
+  partnerType: PartnerFilters["partnerType"]
+): number {
+  return filterPartners(partners, { ...filters, partnerType }).length;
+}
+
+export function countWithCategory(
+  partners: Partner[],
+  filters: PartnerFilters,
+  category: string
+): number {
+  const nextCategories = filters.categories.includes(category)
+    ? filters.categories
+    : [...filters.categories, category];
+  return filterPartners(partners, { ...filters, categories: nextCategories }).length;
+}
+
+export function countWithIndustry(
+  partners: Partner[],
+  filters: PartnerFilters,
+  industry: string
+): number {
+  const nextIndustries = filters.industries.includes(industry)
+    ? filters.industries
+    : [...filters.industries, industry];
+  return filterPartners(partners, { ...filters, industries: nextIndustries }).length;
+}
+
+export function countWithPriceRange(
+  partners: Partner[],
+  filters: PartnerFilters,
+  priceRange: PartnerFilters["priceRange"]
+): number {
+  return filterPartners(partners, { ...filters, priceRange }).length;
+}
+
+export function countWithMinRating(
+  partners: Partner[],
+  filters: PartnerFilters,
+  minRating: number
+): number {
+  return filterPartners(partners, { ...filters, minRating }).length;
 }
