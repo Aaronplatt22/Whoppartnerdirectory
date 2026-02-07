@@ -78,3 +78,25 @@ export const BUDGET_OPTIONS = [
   { value: "$$$", label: "$$$ ($5K-$15K)" },
   { value: "$$$$", label: "$$$$ ($15K+)" },
 ] as const;
+
+// Onboarding: price range labels with descriptions
+export const PRICE_RANGE_OPTIONS = [
+  { value: "$", label: "$", description: "Under $1,000 per project" },
+  { value: "$$", label: "$$", description: "$1,000 - $5,000 per project" },
+  { value: "$$$", label: "$$$", description: "$5,000 - $15,000 per project" },
+  { value: "$$$$", label: "$$$$", description: "$15,000+ per project" },
+] as const;
+
+export const TIMEZONE_OPTIONS = [
+  "EST", "CST", "MST", "PST", "GMT", "CET", "AEST", "JST", "IST", "Multiple", "Remote",
+] as const;
+
+export const LANGUAGE_OPTIONS = [
+  "English", "Spanish", "Portuguese", "French", "German", "Mandarin", "Hindi", "Dutch",
+] as const;
+
+export const RESPONSE_TIME_OPTIONS: { value: "< 24 hours" | "1-2 days" | "3-5 days"; label: string }[] = [
+  { value: "< 24 hours", label: "Under 24 hours" },
+  { value: "1-2 days", label: "1-2 days" },
+  { value: "3-5 days", label: "3-5 days" },
+];
