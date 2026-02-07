@@ -12,6 +12,8 @@ import { useSearch } from "@/hooks/use-search";
 import { Navbar } from "@/components/ui/navbar";
 import { SearchBar } from "@/components/ui/search-bar";
 import { CategoryCard } from "@/components/ui/category-card";
+import { LogoSlider } from "@/components/ui/logo-slider";
+import { HeroGlobe } from "@/components/ui/hero-globe";
 import { PartnerCard } from "@/components/ui/partner-card";
 import { FilterSidebar } from "@/components/ui/filter-sidebar";
 import { ScrollToTop } from "@/components/ui/scroll-to-top";
@@ -138,27 +140,34 @@ export default function PartnersPage() {
 
       {/* 1. Hero */}
       <section
-        className="w-full py-16 px-4 md:py-20"
+        className="relative w-full overflow-hidden pt-0 pb-10 px-4 md:pb-12"
         style={{
-          background: "linear-gradient(180deg, var(--whop-dark) 0%, var(--whop-dark-surface) 100%)",
+          background:
+            "radial-gradient(ellipse 100% 80% at 50% 0%, rgba(250, 70, 22, 0.06) 0%, transparent 50%), radial-gradient(ellipse 120% 100% at 50% 50%, rgba(28, 26, 26, 0.6) 0%, var(--whop-dark) 70%), linear-gradient(180deg, var(--whop-dark) 0%, var(--whop-dark-surface) 100%)",
         }}
       >
-        <Inset side="all" clip="padding-box" className="max-w-4xl mx-auto">
-          <div className="flex flex-col items-center gap-6 text-center">
-            <Heading size="8" className="max-w-2xl">
-              Find the perfect partner to grow your Whop
+        <div className="relative z-0 w-full">
+          <HeroGlobe />
+        </div>
+        <Inset side="all" clip="padding-box" className="relative z-10 max-w-4xl mx-auto -mt-32 md:-mt-40">
+          <div className="flex flex-col items-center gap-4 text-center">
+            <Heading
+              size="8"
+              className="max-w-2xl text-3xl font-bold tracking-tight sm:text-4xl md:text-[2.5rem]"
+            >
+              Find The Perfect Partner To Grow Your Business
             </Heading>
-            <Text size="3" color="gray" className="max-w-xl">
+            <Text size="3" color="gray" className="max-w-xl -mt-0.5">
               Browse vetted agencies, specialists, and tools trusted by the top Whop creators.
             </Text>
-            <div className="w-full max-w-[600px] search-bar-expand rounded-md">
+            <div className="w-full max-w-[600px] search-bar-expand rounded-md pt-0.5">
               <SearchBar
                 value={searchQuery}
                 onChange={setSearchQuery}
                 placeholder="Search by name, category, industry..."
               />
             </div>
-            <div className="flex flex-wrap justify-center gap-2">
+            <div className="flex flex-wrap justify-center gap-2 -mt-0.5">
               <button
                 type="button"
                 onClick={() => handleQuickTypeClick("all")}
@@ -187,12 +196,24 @@ export default function PartnersPage() {
                 </button>
               ))}
             </div>
+            <div className="mt-4 w-full">
+              <LogoSlider />
+            </div>
           </div>
         </Inset>
       </section>
 
+      {/* Subtle transition between hero and Browse by Service */}
+      <div
+        className="w-full h-px flex-shrink-0"
+        style={{
+          background:
+            "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.06) 20%, rgba(255,255,255,0.06) 80%, transparent 100%)",
+        }}
+      />
+
       {/* 2. Category Cards */}
-      <section className="w-full py-12 px-4 border-t border-gray-6">
+      <section className="w-full py-12 px-4 border-gray-6">
         <Inset side="all" clip="padding-box" className="max-w-6xl mx-auto">
           <Heading size="5" className="mb-6">
             Browse by Service
@@ -229,101 +250,82 @@ export default function PartnersPage() {
       {/* 4. Full Directory with Filters */}
       <section
         ref={directoryRef}
-        className="w-full flex-1 py-12 px-4 border-t border-gray-6"
+        className="w-full py-12 px-4 border-t border-gray-6"
       >
-        <Inset side="all" clip="padding-box" className="max-w-7xl mx-auto">
-          <div className="flex gap-8">
-            <div className="w-[280px] shrink-0 hidden lg:block">
+        <Inset side="all" clip="padding-box" className="max-w-6xl mx-auto">
+          <div className="flex flex-col md:flex-row gap-8">
+            <div className="hidden md:block">
               <FilterSidebar
                 filters={filters}
-                onFilterChange={(next) => setFilter(next)}
+                onFilterChange={(f) => {
+                  setFilter(f);
+                  setSearchQuery(f.search);
+                }}
                 allPartners={mockPartners}
               />
             </div>
-
             <div className="flex-1 min-w-0">
-              <div className="lg:hidden mb-4">
-                <Button
-                  variant="soft"
-                  size="2"
-                  color="gray"
-                  onClick={() => setFilterDrawerOpen(true)}
-                >
-                  Filters
-                </Button>
-              </div>
               <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
                 <Text size="2" color="gray">
-                  Showing {totalCount} partner{totalCount !== 1 ? "s" : ""}
+                  {totalCount} partner{totalCount !== 1 ? "s" : ""}
                 </Text>
-                <Select.Root
-                  value={filters.sortBy}
-                  onValueChange={(value) =>
-                    setFilter({ sortBy: value as PartnerFilters["sortBy"] })
-                  }
-                >
-                  <Select.Trigger size="2" variant="surface" color="gray" />
-                  <Select.Content>
-                    {SORT_OPTIONS.map((opt) => (
-                      <Select.Item key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </Select.Item>
-                    ))}
-                  </Select.Content>
-                </Select.Root>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="2"
+                    variant="soft"
+                    color="gray"
+                    className="md:hidden"
+                    onClick={() => setFilterDrawerOpen(true)}
+                  >
+                    <MagnifyingGlassIcon width={16} height={16} className="mr-1" />
+                    Filters
+                    {activeFilterChips.length > 0 && ` (${activeFilterChips.length})`}
+                  </Button>
+                  <Select.Root
+                    value={filters.sortBy}
+                    onValueChange={(v) => setFilter({ sortBy: v as PartnerFilters["sortBy"] })}
+                  >
+                    <Select.Trigger size="2" variant="surface" color="gray" />
+                    <Select.Content>
+                      {SORT_OPTIONS.map(({ value, label }) => (
+                        <Select.Item key={value} value={value}>
+                          {label}
+                        </Select.Item>
+                      ))}
+                    </Select.Content>
+                  </Select.Root>
+                </div>
               </div>
-
               {activeFilterChips.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-4">
                   {activeFilterChips.map(({ key, label, onRemove }) => (
-                    <span
+                    <button
                       key={key}
-                      className="inline-flex items-center gap-1 rounded-full bg-gray-4 px-3 py-1 text-sm text-gray-12"
+                      type="button"
+                      onClick={onRemove}
+                      className="inline-flex items-center gap-1 rounded-full bg-gray-4 px-3 py-1.5 text-sm text-gray-11 hover:bg-gray-5"
                     >
                       {label}
-                      <button
-                        type="button"
-                        onClick={onRemove}
-                        className="rounded-full p-0.5 hover:bg-gray-6 transition-colors"
-                        aria-label={`Remove ${label}`}
-                      >
-                        <Cross2Icon width={12} height={12} />
-                      </button>
-                    </span>
+                      <Cross2Icon width={12} height={12} />
+                    </button>
                   ))}
                 </div>
               )}
-
-              {totalCount === 0 ? (
-                <div
-                  className="partners-result-fade flex flex-col items-center justify-center py-16 px-4 rounded-lg border border-gray-6 bg-[var(--whop-dark-surface)] text-center"
-                  role="status"
-                  aria-live="polite"
-                >
-                  <div
-                    className="w-28 h-28 rounded-full bg-gray-4 flex items-center justify-center mb-6 text-gray-8"
-                    aria-hidden
-                  >
-                    <MagnifyingGlassIcon width={56} height={56} />
-                  </div>
-                  <Heading size="5" weight="medium" className="mb-2">
-                    No partners found
+              {filteredPartners.length === 0 ? (
+                <div className="rounded-lg border border-gray-6 bg-gray-2/50 p-12 text-center">
+                  <Heading size="5" className="mb-2">
+                    No partners match
                   </Heading>
-                  <Text size="2" color="gray" className="mb-6 max-w-sm">
+                  <Text size="2" color="gray" className="mb-4">
                     Try adjusting your filters or search terms to find the right partner.
                   </Text>
-                  <Button
-                    size="3"
-                    color="orange"
-                    onClick={clearFilters}
-                    className="btn-press"
-                  >
-                    Clear Filters
+                  <Button size="2" variant="soft" color="gray" onClick={clearFilters}>
+                    Clear filters
                   </Button>
                 </div>
               ) : (
                 <div
-                  className="partners-result-fade grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
+                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 partners-result-fade"
                   key={`${filters.search}-${filters.sortBy}-${filters.categories.join(",")}-${filters.industries.join(",")}-${filters.partnerType}-${filters.priceRange}-${filters.minRating}`}
                 >
                   {filteredPartners.map((partner) => (
@@ -337,22 +339,18 @@ export default function PartnersPage() {
       </section>
 
       <Sheet.Root open={filterDrawerOpen} onOpenChange={setFilterDrawerOpen}>
-        <Sheet.Content className="max-h-[85vh] overflow-auto">
-          <Sheet.Header className="p-4 border-b border-gray-6">
-            <Sheet.Title>Filters</Sheet.Title>
-          </Sheet.Header>
-          <Sheet.Body className="p-4 overflow-auto">
+        <Sheet.Content side="right" className="w-full max-w-sm overflow-y-auto">
+          <Sheet.Title className="sr-only">Filters</Sheet.Title>
+          <div className="p-4">
             <FilterSidebar
               filters={filters}
-              onFilterChange={(next) => setFilter(next)}
+              onFilterChange={(f) => {
+                setFilter(f);
+                setSearchQuery(f.search);
+              }}
               allPartners={mockPartners}
             />
-            <Sheet.Close asChild>
-              <Button variant="soft" color="gray" className="w-full mt-4 btn-press">
-                Done
-              </Button>
-            </Sheet.Close>
-          </Sheet.Body>
+          </div>
         </Sheet.Content>
       </Sheet.Root>
 

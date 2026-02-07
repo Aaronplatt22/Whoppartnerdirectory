@@ -26,12 +26,7 @@ export function PartnerCard({ partner, showInternalFields = false, featured = fa
     : `/partners/${partner.slug}`;
 
   return (
-    <Link href={profileHref} className="block h-full relative">
-      {featured && (
-        <span className="absolute top-3 right-3 z-10 rounded-md bg-orange-9 px-2 py-0.5 text-xs font-medium text-white shadow-sm">
-          Featured
-        </span>
-      )}
+    <Link href={profileHref} className="block h-full">
       <Card
         size="2"
         variant="surface"
@@ -40,7 +35,14 @@ export function PartnerCard({ partner, showInternalFields = false, featured = fa
         )}
       >
         <div className="flex flex-col gap-3 p-4">
-          <div className="flex items-start gap-3">
+          {featured && (
+            <div className="flex justify-center">
+              <span className="rounded-md bg-orange-9 px-2 py-0.5 text-xs font-medium text-white shadow-sm">
+                Featured
+              </span>
+            </div>
+          )}
+          <div className="flex items-start gap-3 min-w-0">
             <Avatar
               size="5"
               src={partner.logo}
@@ -49,7 +51,7 @@ export function PartnerCard({ partner, showInternalFields = false, featured = fa
             />
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <Heading size="3" trim="both" className="truncate">
+                <Heading size="3" trim="both" className="break-words">
                   {partner.name}
                 </Heading>
                 <PartnerTypeBadge type={partner.partnerType} />

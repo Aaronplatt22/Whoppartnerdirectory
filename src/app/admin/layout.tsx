@@ -10,7 +10,7 @@ import {
   FileTextIcon,
   PersonIcon,
   ChatBubbleIcon,
-  ShieldIcon,
+  LockClosedIcon,
   HamburgerMenuIcon,
 } from "@radix-ui/react-icons";
 import { AdminToastProvider } from "@/contexts/admin-toast-context";
@@ -75,7 +75,7 @@ export default function AdminLayout({
           style={{ background: "var(--whop-dark-surface)" }}
         >
           <div className="p-4 border-b border-[var(--whop-dark-border)] flex items-center gap-2">
-            <ShieldIcon width={24} height={24} className="text-gray-11" />
+            <LockClosedIcon width={24} height={24} className="text-gray-11" />
             <Heading size="4">Partner Admin</Heading>
           </div>
           <NavLinks pathname={pathname} className="flex-1" />

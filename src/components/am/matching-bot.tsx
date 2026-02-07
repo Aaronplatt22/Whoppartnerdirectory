@@ -64,9 +64,13 @@ export function MatchingBot() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(input),
       });
-      const data = await res.json();
-
-      if (data.fallback) {
+      let data: { fallback?: boolean; analysis?: string; recommendations?: MatchResult["recommendations"] };
+      try {
+        data = await res.json();
+      } catch {
+        data = { fallback: true };
+      }
+      if (!res.ok || data.fallback) {
         const scored = scorePartnersForQuery(input, mockPartners);
         setResult({
           analysis: "Match based on your criteria (scoring engine).",
@@ -79,6 +83,7 @@ export function MatchingBot() {
             suggestedIntro: s.suggestedIntro,
           })),
         });
+        if (!res.ok) setError(true);
       } else {
         setResult({
           analysis: data.analysis ?? "",
@@ -238,12 +243,12 @@ export function MatchingBot() {
             {[1, 2, 3].map((i) => (
               <Card key={i} size="3" variant="surface" className="p-5">
                 <div className="flex gap-4">
-                  <Skeleton className="w-14 h-14 rounded-full skeleton-pulse" />
+                  <Skeleton.Avatar className="w-14 h-14 rounded-full skeleton-pulse" />
                   <div className="flex-1 space-y-2">
-                    <Skeleton className="h-5 w-48 skeleton-pulse" />
-                    <Skeleton className="h-4 w-full skeleton-pulse" />
-                    <Skeleton className="h-4 w-3/4 skeleton-pulse" />
-                    <Skeleton className="h-10 w-24 skeleton-pulse mt-4" />
+                    <Skeleton.Rect className="h-5 w-48 skeleton-pulse" />
+                    <Skeleton.Rect className="h-4 w-full skeleton-pulse" />
+                    <Skeleton.Rect className="h-4 w-3/4 skeleton-pulse" />
+                    <Skeleton.Rect className="h-10 w-24 skeleton-pulse mt-4" />
                   </div>
                 </div>
               </Card>

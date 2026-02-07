@@ -64,6 +64,11 @@ html {
   50% { box-shadow: 0 0 12px 4px rgba(250, 70, 22, 0.25); }
 }
 
+@keyframes logo-slider-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
 .partners-result-fade {
   animation: result-fade-in 0.25s ease-out;
 }
