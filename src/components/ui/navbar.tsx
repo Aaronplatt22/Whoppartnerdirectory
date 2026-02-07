@@ -2,8 +2,13 @@
 
 import Link from "next/link";
 import { Heading, Text } from "frosted-ui";
+import { cn } from "@/lib/utils";
 
-export function Navbar() {
+const navLinkClass =
+  "px-4 py-2 rounded-md text-sm font-medium text-gray-11 hover:bg-gray-4 hover:text-gray-12";
+const navLinkActiveClass = "bg-gray-5 text-gray-12";
+
+export function Navbar({ isAMActive }: { isAMActive?: boolean } = {}) {
   return (
     <nav
       className="sticky top-0 z-50 flex items-center justify-between gap-6 px-6 py-3 border-b border-gray-6"
@@ -21,20 +26,17 @@ export function Navbar() {
       <div className="flex items-center gap-1">
         <Link
           href="/partners"
-          className="px-4 py-2 rounded-md text-sm font-medium text-gray-11 hover:bg-gray-4 hover:text-gray-12"
+          className={cn(navLinkClass, isAMActive && "text-gray-11")}
         >
           Directory
         </Link>
         <Link
           href="/am"
-          className="px-4 py-2 rounded-md text-sm font-medium text-gray-11 hover:bg-gray-4 hover:text-gray-12"
+          className={cn(navLinkClass, isAMActive && navLinkActiveClass)}
         >
-          For AMs
+          AM Dashboard
         </Link>
-        <Link
-          href="/admin"
-          className="px-4 py-2 rounded-md text-sm font-medium text-gray-11 hover:bg-gray-4 hover:text-gray-12"
-        >
+        <Link href="/admin" className={navLinkClass}>
           Admin
         </Link>
       </div>

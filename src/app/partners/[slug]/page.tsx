@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useMemo, useState } from "react";
-import { useParams, notFound } from "next/navigation";
+import { useParams, useSearchParams, notFound } from "next/navigation";
 import {
   Heading,
   Text,
@@ -75,7 +75,9 @@ function ReviewStars({ rating }: { rating: number }) {
 
 export default function PartnerProfilePage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const slug = typeof params.slug === "string" ? params.slug : params.slug?.[0];
+  const isAMView = searchParams.get("am") === "1";
 
   const partner = useMemo(
     () => (slug ? mockPartners.find((p) => p.slug === slug) : null),
@@ -253,6 +255,71 @@ export default function PartnerProfilePage() {
               ))}
             </div>
           </section>
+
+          {/* AM-only: Internal info */}
+          {isAMView && (
+            <section>
+              <Heading size="5" className="mb-4">
+                Internal (AM)
+              </Heading>
+              <Card
+                size="3"
+                variant="surface"
+                className="p-5 border-amber-6 bg-amber-2/30"
+              >
+                {partner.internalNotes && (
+                  <div className="mb-4">
+                    <Text size="2" weight="bold" className="mb-1">
+                      Internal Notes
+                    </Text>
+                    <Text size="2" color="gray">
+                      {partner.internalNotes}
+                    </Text>
+                  </div>
+                )}
+                {partner.internalTags.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    <Text size="2" weight="bold" className="w-full">
+                      Internal Tags
+                    </Text>
+                    {partner.internalTags.map((tag) => (
+                      <Badge key={tag} variant="outline" color="amber" size="2">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <Text size="1" color="gray">
+                      Whop Contact
+                    </Text>
+                    <Text size="2">{partner.whopContactPerson}</Text>
+                  </div>
+                  <div>
+                    <Text size="1" color="gray">
+                      Last Engagement
+                    </Text>
+                    <Text size="2">{partner.lastEngagementDate}</Text>
+                  </div>
+                </div>
+                {partner.recommendedFor.length > 0 && (
+                  <div className="mt-4">
+                    <Text size="2" weight="bold" className="mb-2">
+                      Recommended For
+                    </Text>
+                    <div className="flex flex-wrap gap-2">
+                      {partner.recommendedFor.map((tag) => (
+                        <Badge key={tag} variant="soft" color="orange" size="1">
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </Card>
+            </section>
+          )}
 
           {/* Case Studies */}
           {partner.caseStudies.length > 0 && (

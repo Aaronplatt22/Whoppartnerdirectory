@@ -1,14 +1,27 @@
+"use client";
+
+import { AMProvider } from "@/contexts/am-context";
+import { Navbar } from "@/components/ui/navbar";
+
 export default function AMLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <div>
-      <div style={{ background: "#facc15", color: "#000", padding: "8px 16px", textAlign: "center" }}>
-        AM Dashboard
+    <AMProvider isAMView>
+      <div className="min-h-screen flex flex-col">
+        <div
+          className="flex items-center justify-center gap-2 py-2 px-4 text-center text-sm font-medium text-black"
+          style={{ background: "var(--amber-9)" }}
+          role="status"
+        >
+          <span aria-hidden>🔒</span>
+          AM View — Internal information visible. Do not share screen with clients.
+        </div>
+        <Navbar isAMActive />
+        {children}
       </div>
-      {children}
-    </div>
+    </AMProvider>
   );
 }

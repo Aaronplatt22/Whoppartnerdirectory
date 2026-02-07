@@ -21,8 +21,12 @@ export function PartnerCard({ partner, showInternalFields = false, featured = fa
   const categoriesToShow = partner.categories.slice(0, MAX_VISIBLE_CATEGORIES);
   const remainingCount = partner.categories.length - MAX_VISIBLE_CATEGORIES;
 
+  const profileHref = showInternalFields
+    ? `/partners/${partner.slug}?am=1`
+    : `/partners/${partner.slug}`;
+
   return (
-    <Link href={`/partners/${partner.slug}`} className="block h-full relative">
+    <Link href={profileHref} className="block h-full relative">
       {featured && (
         <span className="absolute top-3 right-3 z-10 rounded-md bg-orange-9 px-2 py-0.5 text-xs font-medium text-white shadow-sm">
           Featured
