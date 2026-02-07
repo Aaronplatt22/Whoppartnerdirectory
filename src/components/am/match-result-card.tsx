@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useCallback } from "react";
 import Link from "next/link";
 import {
   Card,
@@ -9,6 +10,7 @@ import {
   Button,
   Avatar,
   CircularProgress,
+  Tooltip,
 } from "frosted-ui";
 import { CopyIcon } from "@radix-ui/react-icons";
 import type { Partner } from "@/lib/types";
@@ -45,12 +47,16 @@ export function MatchResultCard({
   partner,
   onSendIntroduction,
 }: MatchResultCardProps) {
-  const copyIntro = () => {
+  const [copied, setCopied] = useState(false);
+  const copyIntro = useCallback(() => {
     navigator.clipboard.writeText(recommendation.suggestedIntro);
-  };
+    setCopied(true);
+    const t = setTimeout(() => setCopied(false), 2000);
+    return () => clearTimeout(t);
+  }, [recommendation.suggestedIntro]);
 
   return (
-    <Card size="3" variant="surface" className="p-5">
+    <Card size="3" variant="surface" className="p-5 bg-[var(--whop-dark-surface)]">
       <div className="flex gap-4">
         <div className="shrink-0">
           <ScoreRing score={recommendation.matchScore} />
@@ -92,18 +98,20 @@ export function MatchResultCard({
             </>
           )}
 
-          <div className="rounded-lg bg-gray-3 border border-gray-6 p-3 mb-4">
+          <div className="rounded-lg bg-gray-3 border border-[var(--whop-dark-border)] p-3 mb-4">
             <Text size="1" color="gray" className="mb-1">
               Suggested intro
             </Text>
-            <p className="text-sm text-gray-12 mb-2">{recommendation.suggestedIntro}</p>
-            <button
-              type="button"
-              onClick={copyIntro}
-              className="inline-flex items-center gap-1 text-xs text-orange-11 hover:text-orange-12"
-            >
-              <CopyIcon width={12} height={12} /> Copy
-            </button>
+            <p className="text-sm text-[var(--whop-snow)] mb-2">{recommendation.suggestedIntro}</p>
+            <Tooltip content={copied ? "Copied!" : "Copy to clipboard"}>
+              <button
+                type="button"
+                onClick={copyIntro}
+                className="inline-flex items-center gap-1 text-xs text-orange-11 hover:text-orange-12 transition-colors"
+              >
+                <CopyIcon width={12} height={12} /> {copied ? "Copied!" : "Copy"}
+              </button>
+            </Tooltip>
           </div>
 
           <div className="flex flex-wrap gap-2">

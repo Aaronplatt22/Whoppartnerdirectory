@@ -13,15 +13,108 @@
   --whop-snow-muted: #a8a29e;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
+/* Focus for accessibility */
+:focus-visible {
+  outline: 2px solid var(--whop-primary);
+  outline-offset: 2px;
+}
+
+/* Page / content fade-in */
 @keyframes result-fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slide-in-left {
+  from { opacity: 0; transform: translateX(-12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slide-out-right {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(12px); }
+}
+
+@keyframes slide-out-left {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(-12px); }
+}
+
+@keyframes stagger-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+@keyframes cta-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(250, 70, 22, 0.35); }
+  50% { box-shadow: 0 0 12px 4px rgba(250, 70, 22, 0.25); }
 }
 
 .partners-result-fade {
-  animation: result-fade-in 0.2s ease-out;
+  animation: result-fade-in 0.25s ease-out;
+}
+
+.partner-card-hover {
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.partner-card-hover:hover {
+  transform: scale(1.02);
+  border-color: var(--whop-primary) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.category-card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.category-card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.btn-press:active {
+  transform: scale(0.97);
+  transition: transform 0.1s ease;
+}
+
+.onboarding-step-enter-next {
+  animation: slide-in-left 0.3s ease-out;
+}
+.onboarding-step-enter-prev {
+  animation: slide-in-right 0.3s ease-out;
+}
+
+.match-card-stagger {
+  animation: stagger-in 0.35s ease-out both;
+}
+
+.skeleton-pulse {
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+.cta-glow {
+  animation: cta-glow 2.5s ease-in-out infinite;
+}
+
+.search-bar-expand:focus-within {
+  box-shadow: 0 0 0 2px var(--whop-primary);
+  transition: box-shadow 0.2s ease;
+}
+
+.rating-stars-hover:hover {
+  transform: scale(1.05);
+  transition: transform 0.15s ease;
 }

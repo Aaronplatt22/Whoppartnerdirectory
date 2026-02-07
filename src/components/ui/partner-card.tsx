@@ -36,8 +36,7 @@ export function PartnerCard({ partner, showInternalFields = false, featured = fa
         size="2"
         variant="surface"
         className={cn(
-          "h-full transition-[border-color,box-shadow] duration-150",
-          "hover:border-gray-6 hover:shadow-sm"
+          "h-full partner-card-hover bg-[var(--whop-dark-surface)]"
         )}
       >
         <div className="flex flex-col gap-3 p-4">

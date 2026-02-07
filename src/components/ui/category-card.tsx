@@ -42,7 +42,7 @@ export function CategoryCard({ name, icon, count, onClick, selected }: CategoryC
       size="2"
       variant="surface"
       className={cn(
-        "cursor-pointer transition-all duration-150 hover:border-gray-6 hover:scale-[1.02]",
+        "cursor-pointer category-card-hover bg-[var(--whop-dark-surface)] border-[var(--whop-dark-border)]",
         selected && "ring-2 ring-orange-9 border-orange-9"
       )}
       onClick={onClick}

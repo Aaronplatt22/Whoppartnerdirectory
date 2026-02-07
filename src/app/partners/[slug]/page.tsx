@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useMemo, useState } from "react";
+import Link from "next/link";
 import { useParams, useSearchParams, notFound } from "next/navigation";
 import {
   Heading,
@@ -16,6 +17,7 @@ import {
   StarFilledIcon,
   Link2Icon,
   CheckIcon,
+  ChevronRightIcon,
 } from "@radix-ui/react-icons";
 import { mockPartners } from "@/data/mock-partners";
 import type { Partner, PartnerType, CaseStudy, Review } from "@/lib/types";
@@ -23,6 +25,7 @@ import { Navbar } from "@/components/ui/navbar";
 import { PartnerTypeBadge } from "@/components/ui/partner-type-badge";
 import { PriceBadge } from "@/components/ui/price-badge";
 import { RatingStars } from "@/components/ui/rating-stars";
+import { ScrollToTop } from "@/components/ui/scroll-to-top";
 import { cn } from "@/lib/utils";
 
 const COVER_GRADIENTS: Record<PartnerType, string> = {
@@ -175,6 +178,23 @@ export default function PartnerProfilePage() {
     <div className="min-h-screen flex flex-col">
       <Navbar />
 
+      {/* Breadcrumbs + Back */}
+      <Inset side="all" clip="padding-box" className="max-w-6xl mx-auto px-4 py-3 border-b border-gray-6 bg-[var(--whop-dark-surface)]">
+        <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-sm">
+          <Link href="/partners" className="text-gray-11 hover:text-gray-12 transition-colors">
+            Partners
+          </Link>
+          <ChevronRightIcon width={14} height={14} className="text-gray-8" />
+          <span className="text-gray-12 font-medium truncate">{partner.name}</span>
+        </nav>
+        <Link
+          href="/partners"
+          className="inline-flex items-center gap-1 mt-2 text-sm text-orange-11 hover:text-orange-12 transition-colors"
+        >
+          ← Back to Directory
+        </Link>
+      </Inset>
+
       {/* Cover & overlapping header */}
       <section className="relative">
         <div
@@ -322,11 +342,11 @@ export default function PartnerProfilePage() {
           )}
 
           {/* Case Studies */}
-          {partner.caseStudies.length > 0 && (
-            <section>
-              <Heading size="5" className="mb-4">
-                Case Studies
-              </Heading>
+          <section>
+            <Heading size="5" className="mb-4">
+              Case Studies
+            </Heading>
+            {partner.caseStudies.length > 0 ? (
               <div className="flex flex-col gap-6">
                 {partner.caseStudies.map((cs: CaseStudy, idx: number) => (
                   <Card key={idx} size="3" variant="surface" className="p-6">
@@ -359,8 +379,14 @@ export default function PartnerProfilePage() {
                   </Card>
                 ))}
               </div>
-            </section>
-          )}
+            ) : (
+              <Card size="2" variant="surface" className="p-6 bg-[var(--whop-dark-surface)]">
+                <Text size="2" color="gray">
+                  No case studies yet.
+                </Text>
+              </Card>
+            )}
+          </section>
 
           {/* Featured Whops */}
           {partner.featuredWhops.length > 0 && (
@@ -394,8 +420,8 @@ export default function PartnerProfilePage() {
             <Heading size="5" className="mb-2">
               Reviews
             </Heading>
-            <div className="flex items-center gap-4 mb-6 p-4 rounded-lg bg-gray-2/50">
-              <span className="text-4xl font-bold tabular-nums">
+            <div className="flex items-center gap-4 mb-6 p-4 rounded-lg bg-[var(--whop-dark-elevated)]">
+              <span className="text-4xl font-bold tabular-nums text-[var(--whop-snow)]">
                 {partner.avgRating.toFixed(1)}
               </span>
               <div className="flex flex-col gap-0.5">
@@ -405,21 +431,29 @@ export default function PartnerProfilePage() {
                 </Text>
               </div>
             </div>
-            <div className="flex flex-col gap-4">
-              {partner.reviews.map((review: Review, idx: number) => (
-                <Card key={idx} size="2" variant="surface" className="p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <ReviewStars rating={review.rating} />
-                  </div>
-                  <Text size="2" className="mb-3">
-                    {review.text}
-                  </Text>
-                  <Text size="1" color="gray">
-                    {review.reviewerName} · {review.whopName} · {review.date}
-                  </Text>
-                </Card>
-              ))}
-            </div>
+            {partner.reviews.length > 0 ? (
+              <div className="flex flex-col gap-4">
+                {partner.reviews.map((review: Review, idx: number) => (
+                  <Card key={idx} size="2" variant="surface" className="p-4 bg-[var(--whop-dark-surface)]">
+                    <div className="flex items-center gap-2 mb-2">
+                      <ReviewStars rating={review.rating} />
+                    </div>
+                    <Text size="2" className="mb-3">
+                      {review.text}
+                    </Text>
+                    <Text size="1" color="gray">
+                      {review.reviewerName} · {review.whopName} · {review.date}
+                    </Text>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <Card size="2" variant="surface" className="p-6 bg-[var(--whop-dark-surface)]">
+                <Text size="2" color="gray">
+                  No reviews yet — be the first to work with this partner.
+                </Text>
+              </Card>
+            )}
           </section>
         </main>
 
@@ -466,6 +500,7 @@ export default function PartnerProfilePage() {
           </Card>
         </aside>
       </div>
+      <ScrollToTop />
     </div>
   );
 }

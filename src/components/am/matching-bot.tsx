@@ -8,7 +8,8 @@ import {
   Button,
   Checkbox,
   Spinner,
-  Inset,
+  Skeleton,
+  Card,
 } from "frosted-ui";
 import { mockPartners } from "@/data/mock-partners";
 import type { Partner } from "@/lib/types";
@@ -86,6 +87,18 @@ export function MatchingBot() {
       }
     } catch {
       setError(true);
+      const scored = scorePartnersForQuery(input, mockPartners);
+      setResult({
+        analysis: "Fallback results (API unavailable).",
+        recommendations: scored.map((s) => ({
+          partnerId: s.partner.id,
+          partnerName: s.partner.name,
+          matchScore: s.score,
+          reason: s.reason,
+          relevantCaseStudy: s.relevantCaseStudy,
+          suggestedIntro: s.suggestedIntro,
+        })),
+      });
     } finally {
       setLoading(false);
     }
@@ -204,6 +217,7 @@ export function MatchingBot() {
             variant="solid"
             onClick={runMatch}
             disabled={loading}
+            className="btn-press"
           >
             {loading ? (
               <>
@@ -217,21 +231,45 @@ export function MatchingBot() {
         </div>
       </section>
 
-      {error && (
-        <div className="rounded-lg border border-red-6 bg-red-2 p-4 text-center">
-          <Text size="2" color="red">
-            Something went wrong. Please try again.
+      {loading && (
+        <section className="flex flex-col gap-4">
+          <Heading size="5">Recommendations</Heading>
+          <div className="flex flex-col gap-4">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} size="3" variant="surface" className="p-5">
+                <div className="flex gap-4">
+                  <Skeleton className="w-14 h-14 rounded-full skeleton-pulse" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-5 w-48 skeleton-pulse" />
+                    <Skeleton className="h-4 w-full skeleton-pulse" />
+                    <Skeleton className="h-4 w-3/4 skeleton-pulse" />
+                    <Skeleton className="h-10 w-24 skeleton-pulse mt-4" />
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {error && !loading && (
+        <Card size="3" variant="surface" className="p-6 border-red-6 bg-red-2/20">
+          <Heading size="4" className="mb-2">
+            Something went wrong
+          </Heading>
+          <Text size="2" color="gray" className="mb-4">
+            We couldn&apos;t reach the matching service. You can try again or use the results below if we have fallback suggestions.
           </Text>
           <Button
             size="2"
-            variant="soft"
             color="red"
-            className="mt-3"
+            variant="soft"
+            className="btn-press"
             onClick={() => { setError(false); runMatch(); }}
           >
             Try again
           </Button>
-        </div>
+        </Card>
       )}
 
       {result && !loading && (
@@ -245,13 +283,18 @@ export function MatchingBot() {
             </Text>
           )}
           <div className="flex flex-col gap-4">
-            {result.recommendations.map((rec) => (
-              <MatchResultCard
+            {result.recommendations.map((rec, index) => (
+              <div
                 key={rec.partnerId}
-                recommendation={rec}
-                partner={mockPartners.find((p) => p.id === rec.partnerId) ?? null}
-                onSendIntroduction={() => openRecommend(rec)}
-              />
+                className="match-card-stagger"
+                style={{ animationDelay: `${index * 100}ms` }}
+              >
+                <MatchResultCard
+                  recommendation={rec}
+                  partner={mockPartners.find((p) => p.id === rec.partnerId) ?? null}
+                  onSendIntroduction={() => openRecommend(rec)}
+                />
+              </div>
             ))}
           </div>
         </section>

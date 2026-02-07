@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
-import { Heading, Text, Inset, Select } from "frosted-ui";
-import { Cross2Icon } from "@radix-ui/react-icons";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Heading, Text, Inset, Select, Button, Sheet } from "frosted-ui";
+import { Cross2Icon, MagnifyingGlassIcon } from "@radix-ui/react-icons";
 import { mockPartners } from "@/data/mock-partners";
 import type { PartnerFilters, PartnerType } from "@/lib/types";
 import { CATEGORIES, CATEGORY_ICONS, PARTNER_TYPE_LABELS } from "@/lib/constants";
@@ -14,6 +14,7 @@ import { SearchBar } from "@/components/ui/search-bar";
 import { CategoryCard } from "@/components/ui/category-card";
 import { PartnerCard } from "@/components/ui/partner-card";
 import { FilterSidebar } from "@/components/ui/filter-sidebar";
+import { ScrollToTop } from "@/components/ui/scroll-to-top";
 import { cn } from "@/lib/utils";
 
 const SORT_OPTIONS: { value: PartnerFilters["sortBy"]; label: string }[] = [
@@ -26,6 +27,7 @@ const SORT_OPTIONS: { value: PartnerFilters["sortBy"]; label: string }[] = [
 export default function PartnersPage() {
   const directoryRef = useRef<HTMLDivElement>(null);
   const searchFromFilterRef = useRef(false);
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
 
   const {
     filters,
@@ -149,7 +151,7 @@ export default function PartnersPage() {
             <Text size="3" color="gray" className="max-w-xl">
               Browse vetted agencies, specialists, and tools trusted by the top Whop creators.
             </Text>
-            <div className="w-full max-w-[600px]">
+            <div className="w-full max-w-[600px] search-bar-expand rounded-md">
               <SearchBar
                 value={searchQuery}
                 onChange={setSearchQuery}
@@ -240,6 +242,16 @@ export default function PartnersPage() {
             </div>
 
             <div className="flex-1 min-w-0">
+              <div className="lg:hidden mb-4">
+                <Button
+                  variant="soft"
+                  size="2"
+                  color="gray"
+                  onClick={() => setFilterDrawerOpen(true)}
+                >
+                  Filters
+                </Button>
+              </div>
               <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
                 <Text size="2" color="gray">
                   Showing {totalCount} partner{totalCount !== 1 ? "s" : ""}
@@ -284,41 +296,30 @@ export default function PartnersPage() {
 
               {totalCount === 0 ? (
                 <div
-                  className="partners-result-fade flex flex-col items-center justify-center py-16 px-4 rounded-lg border border-gray-6 bg-gray-2/50 text-center"
+                  className="partners-result-fade flex flex-col items-center justify-center py-16 px-4 rounded-lg border border-gray-6 bg-[var(--whop-dark-surface)] text-center"
                   role="status"
                   aria-live="polite"
                 >
                   <div
-                    className="w-24 h-24 rounded-full bg-gray-4 flex items-center justify-center mb-4"
+                    className="w-28 h-28 rounded-full bg-gray-4 flex items-center justify-center mb-6 text-gray-8"
                     aria-hidden
                   >
-                    <svg
-                      className="w-12 h-12 text-gray-8"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={1.5}
-                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                      />
-                    </svg>
+                    <MagnifyingGlassIcon width={56} height={56} />
                   </div>
-                  <Heading size="4" className="mb-2">
+                  <Heading size="5" weight="medium" className="mb-2">
                     No partners found
                   </Heading>
-                  <Text size="2" color="gray" className="mb-6">
-                    Try adjusting your filters or search terms.
+                  <Text size="2" color="gray" className="mb-6 max-w-sm">
+                    Try adjusting your filters or search terms to find the right partner.
                   </Text>
-                  <button
-                    type="button"
+                  <Button
+                    size="3"
+                    color="orange"
                     onClick={clearFilters}
-                    className="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium bg-orange-9 text-white hover:bg-orange-10 transition-colors"
+                    className="btn-press"
                   >
                     Clear Filters
-                  </button>
+                  </Button>
                 </div>
               ) : (
                 <div
@@ -334,6 +335,28 @@ export default function PartnersPage() {
           </div>
         </Inset>
       </section>
+
+      <Sheet.Root open={filterDrawerOpen} onOpenChange={setFilterDrawerOpen}>
+        <Sheet.Content className="max-h-[85vh] overflow-auto">
+          <Sheet.Header className="p-4 border-b border-gray-6">
+            <Sheet.Title>Filters</Sheet.Title>
+          </Sheet.Header>
+          <Sheet.Body className="p-4 overflow-auto">
+            <FilterSidebar
+              filters={filters}
+              onFilterChange={(next) => setFilter(next)}
+              allPartners={mockPartners}
+            />
+            <Sheet.Close asChild>
+              <Button variant="soft" color="gray" className="w-full mt-4 btn-press">
+                Done
+              </Button>
+            </Sheet.Close>
+          </Sheet.Body>
+        </Sheet.Content>
+      </Sheet.Root>
+
+      <ScrollToTop />
     </div>
   );
 }

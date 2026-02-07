@@ -206,12 +206,18 @@ export default function OnboardingPage() {
     return Object.keys(e).length === 0;
   };
 
+  const [stepDirection, setStepDirection] = useState<"next" | "prev">("next");
   const canNext = () => validateStep(step);
   const goNext = () => {
     if (!canNext()) return;
+    setStepDirection("next");
     setStep((prev) => Math.min(prev + 1, 5));
   };
-  const goBack = () => setStep((prev) => Math.max(prev - 1, 1));
+  const goBack = () => {
+    setStepDirection("prev");
+    setStep((prev) => Math.max(prev - 1, 1));
+  };
+  const stepTransitionClass = stepDirection === "next" ? "onboarding-step-enter-next" : "onboarding-step-enter-prev";
 
   const draftPartner = useMemo(
     () =>
@@ -312,7 +318,7 @@ export default function OnboardingPage() {
 
         {/* Step 1: Welcome & Basics */}
         {step === 1 && (
-          <div className="space-y-6 partners-result-fade">
+          <div className={cn("space-y-6", stepTransitionClass)}>
             <div>
               <Heading size="6" className="mb-2">
                 You&apos;ve been invited to join the Whop Partner Directory
@@ -412,7 +418,7 @@ export default function OnboardingPage() {
               </TextField.Root>
             </Card>
             <div className="flex justify-end">
-              <Button size="3" color="orange" onClick={goNext}>
+              <Button size="3" color="orange" onClick={goNext} className="btn-press">
                 Next
               </Button>
             </div>
@@ -421,7 +427,7 @@ export default function OnboardingPage() {
 
         {/* Step 2: About & Services */}
         {step === 2 && (
-          <div className="space-y-6 partners-result-fade">
+          <div className={cn("space-y-6", stepTransitionClass)}>
             <Heading size="5">About & Services</Heading>
             <Card className="p-6 space-y-6">
               <div>
@@ -512,7 +518,7 @@ export default function OnboardingPage() {
 
         {/* Step 3: Pricing & Logistics */}
         {step === 3 && (
-          <div className="space-y-6 partners-result-fade">
+          <div className={cn("space-y-6", stepTransitionClass)}>
             <Heading size="5">Pricing & Logistics</Heading>
             <Card className="p-6 space-y-6">
               <div>
@@ -613,7 +619,7 @@ export default function OnboardingPage() {
 
         {/* Step 4: Social Proof */}
         {step === 4 && (
-          <div className="space-y-6 partners-result-fade">
+          <div className={cn("space-y-6", stepTransitionClass)}>
             <div>
               <Heading size="5">Show creators what you can do</Heading>
               <Text size="2" color="gray">
@@ -718,7 +724,7 @@ export default function OnboardingPage() {
 
         {/* Step 5: Review & Submit */}
         {step === 5 && (
-          <div className="space-y-6 partners-result-fade">
+          <div className={cn("space-y-6", stepTransitionClass)}>
             <Heading size="5">Review & Submit</Heading>
 
             <div>

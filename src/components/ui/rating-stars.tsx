@@ -17,7 +17,7 @@ export function RatingStars({ rating, size = "md" }: RatingStarsProps) {
   const iconSize = size === "sm" ? 14 : 18;
 
   return (
-    <span className="inline-flex items-center gap-1">
+    <span className="inline-flex items-center gap-1 rating-stars-hover">
       <span className="inline-flex items-center" aria-hidden>
         {[0, 1, 2, 3, 4].map((i) => {
           if (i < fullStars) {
