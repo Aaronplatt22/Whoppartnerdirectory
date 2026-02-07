@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --whop-primary: #FA4616;
+  --whop-primary-hover: #e03d12;
+  --whop-dark: #141212;
+  --whop-dark-surface: #1a1818;
+  --whop-dark-elevated: #222020;
+  --whop-dark-border: #2a2828;
+  --whop-snow: #FCF6F5;
+  --whop-snow-muted: #a8a29e;
+}
