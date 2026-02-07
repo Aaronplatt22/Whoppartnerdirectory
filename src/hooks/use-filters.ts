@@ -1,7 +1,10 @@
+"use client";
+
+import { useCallback, useState } from "react";
 import type { PartnerFilters } from "@/lib/types";
 
-export function useFilters(initial?: Partial<PartnerFilters>): PartnerFilters & { setFilters: (f: Partial<PartnerFilters>) => void } {
-  return {
+export function useFilters(initial?: Partial<PartnerFilters>) {
+  const [filters, setFiltersState] = useState<PartnerFilters>({
     search: "",
     partnerType: "all",
     categories: [],
@@ -10,6 +13,11 @@ export function useFilters(initial?: Partial<PartnerFilters>): PartnerFilters & 
     minRating: 0,
     sortBy: "relevance",
     ...initial,
-    setFilters: () => {},
-  } as PartnerFilters & { setFilters: (f: Partial<PartnerFilters>) => void };
+  });
+
+  const setFilters = useCallback((update: Partial<PartnerFilters>) => {
+    setFiltersState((prev) => ({ ...prev, ...update }));
+  }, []);
+
+  return { filters, setFilters };
 }

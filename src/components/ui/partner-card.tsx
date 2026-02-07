@@ -11,16 +11,23 @@ import { cn } from "@/lib/utils";
 export interface PartnerCardProps {
   partner: Partner;
   showInternalFields?: boolean;
+  /** Show a "Featured" badge overlay (e.g. for directory home featured row) */
+  featured?: boolean;
 }
 
 const MAX_VISIBLE_CATEGORIES = 3;
 
-export function PartnerCard({ partner, showInternalFields = false }: PartnerCardProps) {
+export function PartnerCard({ partner, showInternalFields = false, featured = false }: PartnerCardProps) {
   const categoriesToShow = partner.categories.slice(0, MAX_VISIBLE_CATEGORIES);
   const remainingCount = partner.categories.length - MAX_VISIBLE_CATEGORIES;
 
   return (
-    <Link href={`/partners/${partner.slug}`} className="block h-full">
+    <Link href={`/partners/${partner.slug}`} className="block h-full relative">
+      {featured && (
+        <span className="absolute top-3 right-3 z-10 rounded-md bg-orange-9 px-2 py-0.5 text-xs font-medium text-white shadow-sm">
+          Featured
+        </span>
+      )}
       <Card
         size="2"
         variant="surface"
