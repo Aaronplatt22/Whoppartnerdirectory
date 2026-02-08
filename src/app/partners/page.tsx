@@ -12,7 +12,6 @@ import { useSearch } from "@/hooks/use-search";
 import { Navbar } from "@/components/ui/navbar";
 import { SearchBar } from "@/components/ui/search-bar";
 import { CategoryCard } from "@/components/ui/category-card";
-import { LogoSlider } from "@/components/ui/logo-slider";
 import { HeroGlobe } from "@/components/ui/hero-globe";
 import { PartnerCard } from "@/components/ui/partner-card";
 import { FilterSidebar } from "@/components/ui/filter-sidebar";
@@ -140,7 +139,7 @@ export default function PartnersPage() {
 
       {/* 1. Hero – single background #141212 so no line between globe and headline */}
       <section
-        className="relative w-full overflow-hidden pt-0 pb-8 px-4"
+        className="relative w-full overflow-hidden pt-12 pb-8 px-4"
         style={{
           background: "#141212",
           border: "none",
@@ -181,7 +180,7 @@ export default function PartnersPage() {
                 placeholder="Search by name, category, industry..."
               />
             </div>
-            <div className="flex flex-wrap justify-center gap-2 mb-6">
+            <div className="flex flex-wrap justify-center gap-2 mb-0">
               <button
                 type="button"
                 onClick={() => handleQuickTypeClick("all")}
@@ -209,9 +208,6 @@ export default function PartnersPage() {
                   {PARTNER_TYPE_LABELS[type]}
                 </button>
               ))}
-            </div>
-            <div className="w-full">
-              <LogoSlider />
             </div>
           </div>
         </Inset>

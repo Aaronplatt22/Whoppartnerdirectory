@@ -69,6 +69,28 @@ html {
   100% { transform: translateX(-50%); }
 }
 
+@keyframes globe-text-scroll {
+  0% { transform: translateX(-50%); }
+  100% { transform: translateX(0); }
+}
+
+.globe-text-scroll {
+  width: max-content;
+  animation: globe-text-scroll 35s linear infinite;
+}
+
+.globe-text-label {
+  display: inline-block;
+  padding-right: 2em;
+  font-size: clamp(1.25rem, 2.5vw + 0.5rem, 2.25rem);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.8);
+  text-shadow: 0 0 24px rgba(250, 70, 22, 0.2);
+  text-transform: uppercase;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
 .partners-result-fade {
   animation: result-fade-in 0.25s ease-out;
 }
