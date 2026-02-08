@@ -116,23 +116,24 @@ export function HeroGlobe() {
         const tctx = textCanvas.getContext("2d")!;
         tctx.clearRect(0, 0, 4096, 160);
         tctx.fillStyle = "#FFFFFF";
-        tctx.font = "bold 64px Arial, Helvetica, sans-serif";
+        tctx.font = "bold 72px Arial, Helvetica, sans-serif";
         tctx.textAlign = "left";
         tctx.textBaseline = "middle";
         const label = "WHOP PARTNER NETWORK ";
-        const logoSize = 56;
-        const logoPadding = 35;
-        const logoBlockWidth = logoPadding + logoSize + logoPadding;
         const textWidth = tctx.measureText(label).width;
+        const aspectRatio = img.naturalWidth / img.naturalHeight;
+        const logoSize = 64;
+        const logoDrawWidth = logoSize * aspectRatio;
         const centerY = 80;
         const logoY = (160 - logoSize) / 2;
+        const totalContent = 3 * textWidth + 3 * logoDrawWidth;
+        const gap = (4096 - totalContent) / 6;
         let x = 0;
-        const repetitions = 5;
-        for (let i = 0; i < repetitions; i++) {
-          tctx.drawImage(img, x + logoPadding, logoY, logoSize, logoSize);
-          x += logoBlockWidth;
+        for (let i = 0; i < 3; i++) {
           tctx.fillText(label, x, centerY);
-          x += textWidth;
+          x += textWidth + gap;
+          tctx.drawImage(img, x, logoY, logoDrawWidth, logoSize);
+          x += logoDrawWidth + gap;
         }
         const textTexture = new THREE.CanvasTexture(textCanvas);
         textTexture.wrapS = THREE.RepeatWrapping;
@@ -146,7 +147,7 @@ export function HeroGlobe() {
         textTexture.generateMipmaps = true;
         textTexture.needsUpdate = true;
         const bandRadius = radius + 0.08;
-        const bandHeight = 0.5;
+        const bandHeight = 0.58;
         const textCylinderGeo = new THREE.CylinderGeometry(
           bandRadius,
           bandRadius,
@@ -378,7 +379,7 @@ export function HeroGlobe() {
           width: "100vw",
           height: "65%",
           background:
-            "linear-gradient(to bottom, rgba(20, 18, 18, 0) 0%, rgba(20, 18, 18, 0) 20%, rgba(20, 18, 18, 0.3) 40%, rgba(20, 18, 18, 0.7) 60%, rgba(20, 18, 18, 0.9) 80%, #141212 100%)",
+            "linear-gradient(to bottom, rgba(20, 18, 18, 0) 60%, rgba(20, 18, 18, 0.5) 75%, rgba(20, 18, 18, 0.9) 88%, #141212 100%)",
           border: "none",
           outline: "none",
           boxShadow: "none",
@@ -387,13 +388,13 @@ export function HeroGlobe() {
         }}
       />
 
-      {/* Whop logo: centered on visible hemisphere (~top 32%) */}
+      {/* Whop logo: centered on visible hemisphere (~top 36%) */}
       <div
         className="absolute left-1/2 z-10 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center"
         style={{
-          top: "32%",
-          width: 220,
-          height: 220,
+          top: "36%",
+          width: 250,
+          height: 250,
           background: "transparent",
           border: "none",
           outline: "none",
@@ -403,8 +404,8 @@ export function HeroGlobe() {
         <Image
           src="/whop_logo_brandmark_white.png"
           alt="Whop"
-          width={220}
-          height={220}
+          width={250}
+          height={250}
           className="object-contain"
           style={{ background: "transparent" }}
         />
