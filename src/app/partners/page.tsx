@@ -138,36 +138,50 @@ export default function PartnersPage() {
     <div className="min-h-screen flex flex-col">
       <Navbar />
 
-      {/* 1. Hero */}
+      {/* 1. Hero – single background #141212 so no line between globe and headline */}
       <section
-        className="relative w-full overflow-hidden pt-0 pb-10 px-4 md:pb-12"
+        className="relative w-full overflow-hidden pt-0 pb-8 px-4"
         style={{
-          background:
-            "radial-gradient(ellipse 100% 80% at 50% 0%, rgba(250, 70, 22, 0.06) 0%, transparent 50%), radial-gradient(ellipse 120% 100% at 50% 50%, rgba(28, 26, 26, 0.6) 0%, var(--whop-dark) 70%), linear-gradient(180deg, var(--whop-dark) 0%, var(--whop-dark-surface) 100%)",
+          background: "#141212",
+          border: "none",
+          outline: "none",
+          boxShadow: "none",
         }}
       >
-        <div className="relative z-0 w-full">
+        <div
+          className="relative z-0 w-full"
+          style={{ background: "transparent", border: "none", outline: "none", boxShadow: "none" }}
+        >
           <HeroGlobe />
         </div>
-        <Inset side="all" clip="padding-box" className="relative z-10 max-w-4xl mx-auto -mt-32 md:-mt-40">
-          <div className="flex flex-col items-center gap-4 text-center">
+        <Inset
+          side="all"
+          clip="padding-box"
+          className="relative z-10 max-w-4xl mx-auto mt-0"
+          style={{ background: "transparent", border: "none", outline: "none", boxShadow: "none" }}
+        >
+          <div
+            className="flex flex-col items-center text-center"
+            style={{ background: "transparent", border: "none", outline: "none", boxShadow: "none" }}
+          >
             <Heading
               size="8"
-              className="max-w-2xl text-3xl font-bold tracking-tight sm:text-4xl md:text-[2.5rem]"
+              className="max-w-2xl tracking-tight font-extrabold mb-[12px] text-[2.25rem] sm:text-[2.7rem] md:text-[3rem]"
+              style={{ textShadow: "0 0 40px rgba(250, 70, 22, 0.15)" }}
             >
               Find The Perfect Partner To Grow Your Business
             </Heading>
-            <Text size="3" color="gray" className="max-w-xl -mt-0.5">
+            <Text size="3" color="gray" className="max-w-xl mb-5">
               Browse vetted agencies, specialists, and tools trusted by the top Whop creators.
             </Text>
-            <div className="w-full max-w-[600px] search-bar-expand rounded-md pt-0.5">
+            <div className="w-full max-w-[600px] search-bar-expand rounded-md mb-4">
               <SearchBar
                 value={searchQuery}
                 onChange={setSearchQuery}
                 placeholder="Search by name, category, industry..."
               />
             </div>
-            <div className="flex flex-wrap justify-center gap-2 -mt-0.5">
+            <div className="flex flex-wrap justify-center gap-2 mb-6">
               <button
                 type="button"
                 onClick={() => handleQuickTypeClick("all")}
@@ -196,7 +210,7 @@ export default function PartnersPage() {
                 </button>
               ))}
             </div>
-            <div className="mt-4 w-full">
+            <div className="w-full">
               <LogoSlider />
             </div>
           </div>
@@ -213,7 +227,7 @@ export default function PartnersPage() {
       />
 
       {/* 2. Category Cards */}
-      <section className="w-full py-12 px-4 border-gray-6">
+      <section className="w-full pt-[48px] pb-12 px-4 border-gray-6">
         <Inset side="all" clip="padding-box" className="max-w-6xl mx-auto">
           <Heading size="5" className="mb-6">
             Browse by Service

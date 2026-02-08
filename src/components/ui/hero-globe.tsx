@@ -126,53 +126,77 @@ export function HeroGlobe() {
   }, []);
 
   return (
-    <div className="relative w-full overflow-hidden h-[320px] sm:h-[420px] md:h-[520px] lg:h-[640px] max-w-[800px] mx-auto -mt-20 md:-mt-28">
-      {/* Subtle orange ambient glow behind globe */}
+    <div
+      className="relative w-full h-[368px] sm:h-[484px] md:h-[598px] lg:h-[736px] -mt-28 md:-mt-36"
+      style={{ background: "transparent", border: "none", outline: "none", boxShadow: "none" }}
+    >
+      {/* Globe container: centered, max 800px; no overflow-hidden – gradient overlay hides bottom */}
       <div
-        className="pointer-events-none absolute inset-0 z-0 flex items-start justify-center"
+        className="absolute inset-0 max-w-[800px] w-full left-1/2 -translate-x-1/2"
+        style={{ background: "transparent", border: "none", outline: "none", boxShadow: "none" }}
+      >
+        {/* Large soft atmospheric glow BEHIND globe (~150% width, orange 5–8%) */}
+        <div
+          className="pointer-events-none absolute inset-0 z-0"
+          style={{
+            background:
+              "radial-gradient(ellipse 75% 55% at 50% 38%, rgba(250, 70, 22, 0.065) 0%, transparent 55%)",
+          }}
+        />
+        <div
+          ref={containerRef}
+          className="absolute inset-0 z-[1]"
+          style={{ background: "transparent", border: "none", outline: "none", boxShadow: "none" }}
+        >
+          <canvas
+            ref={canvasRef}
+            className="block w-full h-full"
+            style={{
+              width: "100%",
+              height: "100%",
+              display: "block",
+              border: "none",
+              outline: "none",
+            }}
+          />
+        </div>
+
+        {/* Whop logo: centered on visible hemisphere (~top 32%), with radial glow */}
+        <div
+          className="absolute left-1/2 z-10 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center"
+          style={{
+            top: "32%",
+            width: 110,
+            height: 110,
+            boxShadow: "0 0 60px 24px rgba(250, 70, 22, 0.15)",
+            filter: "drop-shadow(0 0 16px rgba(250, 70, 22, 0.25))",
+          }}
+        >
+          <Image
+            src="/whop_logo_brandmark_white.png"
+            alt="Whop"
+            width={110}
+            height={110}
+            className="object-contain"
+          />
+        </div>
+      </div>
+
+      {/* Full-width gradient overlay: starts fully transparent, gradual fade, covers bottom ~65% */}
+      <div
+        className="pointer-events-none absolute bottom-0 z-[2]"
         style={{
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: "100vw",
+          height: "65%",
           background:
-            "radial-gradient(ellipse 80% 60% at 50% 35%, rgba(250, 70, 22, 0.08) 0%, transparent 60%)",
-        }}
-      />
-      <div
-        ref={containerRef}
-        className="absolute inset-0 z-0"
-        style={{ background: "transparent" }}
-      >
-        <canvas
-          ref={canvasRef}
-          className="block w-full h-full"
-          style={{ width: "100%", height: "100%", display: "block" }}
-        />
-      </div>
-
-      {/* Whop logo: centered on visible hemisphere (~top 32%), with radial glow */}
-      <div
-        className="absolute left-1/2 z-10 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center"
-        style={{
-          top: "32%",
-          width: 110,
-          height: 110,
-          boxShadow: "0 0 60px 24px rgba(250, 70, 22, 0.15)",
-          filter: "drop-shadow(0 0 16px rgba(250, 70, 22, 0.25))",
-        }}
-      >
-        <Image
-          src="/whop_logo_brandmark_white.png"
-          alt="Whop"
-          width={110}
-          height={110}
-          className="object-contain"
-        />
-      </div>
-
-      {/* Long, gradual bottom fade (200px+) into hero background */}
-      <div
-        className="pointer-events-none absolute bottom-0 left-0 right-0 z-[1]"
-        style={{
-          minHeight: 220,
-          background: `linear-gradient(to bottom, transparent 0%, rgba(20, 18, 18, 0.4) 35%, ${HERO_BG} 100%)`,
+            "linear-gradient(to bottom, rgba(20, 18, 18, 0) 0%, rgba(20, 18, 18, 0) 20%, rgba(20, 18, 18, 0.3) 40%, rgba(20, 18, 18, 0.7) 60%, rgba(20, 18, 18, 0.9) 80%, #141212 100%)",
+          border: "none",
+          outline: "none",
+          boxShadow: "none",
+          borderRadius: 0,
+          margin: 0,
         }}
       />
     </div>
