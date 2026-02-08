@@ -8,14 +8,13 @@ const WHOP_ORANGE = 0xfa4616;
 const HERO_BG = "#141212";
 const PARTNER_NAMES = mockPartners.map((p) => p.name);
 const MAX_PINGS = 3;
-const PING_DURATION_MS = 2300; // 0.3 + 1.5 + 0.5
+const PING_DURATION_MS = 2800; // 0.3s fade in + 2s hold + 0.5s fade out
 const RIPPLE_DURATION_MS = 1200;
 
 interface PingState {
   position: import("three").Vector3;
   spawnTime: number;
   partnerName: string;
-  dotMesh: import("three").Mesh;
   rippleMesh: import("three").Mesh;
   labelEl: HTMLDivElement;
 }
@@ -35,6 +34,7 @@ export function HeroGlobe() {
     scene: import("three").Scene;
     camera: import("three").PerspectiveCamera;
     pings: PingState[];
+    textCylinder: import("three").Mesh | null;
   } | null>(null);
 
   useEffect(() => {
@@ -69,25 +69,22 @@ export function HeroGlobe() {
       camera.lookAt(0, 0.55, 0);
 
       const radius = 1.2;
-      const phiSteps = 70;
-      const thetaSteps = 120;
+      const numPoints = 8520; // same order as previous (71 * 120)
       const positions: number[] = [];
       const colors: number[] = [];
       const r = (WHOP_ORANGE >> 16) / 255;
       const g = ((WHOP_ORANGE >> 8) & 0xff) / 255;
       const b = (WHOP_ORANGE & 0xff) / 255;
 
-      for (let i = 0; i <= phiSteps; i++) {
-        const phi = (i / phiSteps) * Math.PI;
-        for (let j = 0; j < thetaSteps; j++) {
-          const theta = (j / thetaSteps) * Math.PI * 2;
-          const x = radius * Math.sin(phi) * Math.cos(theta);
-          const y = radius * Math.cos(phi);
-          const z = radius * Math.sin(phi) * Math.sin(theta);
-          positions.push(x, y, z);
-          const brightness = 0.55 + 0.45 * (1 - Math.cos(phi)) * 0.5;
-          colors.push(r * brightness, g * brightness, b * brightness);
-        }
+      for (let i = 0; i < numPoints; i++) {
+        const y = 1 - (i / (numPoints - 1)) * 2;
+        const radiusAtY = Math.sqrt(1 - y * y);
+        const theta = Math.PI * (1 + Math.sqrt(5)) * i;
+        const x = Math.cos(theta) * radiusAtY;
+        const z = Math.sin(theta) * radiusAtY;
+        positions.push(radius * x, radius * y, radius * z);
+        const brightness = 0.55 + 0.45 * (1 - y) * 0.5;
+        colors.push(r * brightness, g * brightness, b * brightness);
       }
 
       const geometry = new THREE.BufferGeometry();
@@ -108,15 +105,78 @@ export function HeroGlobe() {
       mesh.position.y = 0.55;
       scene.add(mesh);
 
+      const img = document.createElement("img");
+      img.crossOrigin = "anonymous";
+      img.src = "/whop_logo_brandmark_white.png";
+      img.onload = () => {
+        if (!mountedRef.current || !scene) return;
+        const textCanvas = document.createElement("canvas");
+        textCanvas.width = 4096;
+        textCanvas.height = 160;
+        const tctx = textCanvas.getContext("2d")!;
+        tctx.clearRect(0, 0, 4096, 160);
+        tctx.fillStyle = "#FFFFFF";
+        tctx.font = "bold 64px Arial, Helvetica, sans-serif";
+        tctx.textAlign = "left";
+        tctx.textBaseline = "middle";
+        const label = "WHOP PARTNER NETWORK ";
+        const logoSize = 56;
+        const logoPadding = 35;
+        const logoBlockWidth = logoPadding + logoSize + logoPadding;
+        const textWidth = tctx.measureText(label).width;
+        const centerY = 80;
+        const logoY = (160 - logoSize) / 2;
+        let x = 0;
+        const repetitions = 5;
+        for (let i = 0; i < repetitions; i++) {
+          tctx.drawImage(img, x + logoPadding, logoY, logoSize, logoSize);
+          x += logoBlockWidth;
+          tctx.fillText(label, x, centerY);
+          x += textWidth;
+        }
+        const textTexture = new THREE.CanvasTexture(textCanvas);
+        textTexture.wrapS = THREE.RepeatWrapping;
+        textTexture.anisotropy =
+          typeof renderer !== "undefined" &&
+          renderer.capabilities?.getMaxAnisotropy != null
+            ? renderer.capabilities.getMaxAnisotropy()
+            : 16;
+        textTexture.minFilter = THREE.LinearFilter;
+        textTexture.magFilter = THREE.LinearFilter;
+        textTexture.generateMipmaps = true;
+        textTexture.needsUpdate = true;
+        const bandRadius = radius + 0.08;
+        const bandHeight = 0.5;
+        const textCylinderGeo = new THREE.CylinderGeometry(
+          bandRadius,
+          bandRadius,
+          bandHeight,
+          64,
+          1,
+          true
+        );
+        const textCylinderMat = new THREE.MeshBasicMaterial({
+          map: textTexture,
+          transparent: true,
+          opacity: 1.0,
+          side: THREE.FrontSide,
+          depthWrite: false,
+        });
+        const textCylinder = new THREE.Mesh(textCylinderGeo, textCylinderMat);
+        textCylinder.position.set(0, 0.15, 0);
+        scene.add(textCylinder);
+        if (sceneRef.current) sceneRef.current.textCylinder = textCylinder;
+      };
+
       renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-      sceneRef.current = { renderer, mesh, scene, camera, pings };
+      sceneRef.current = { renderer, mesh, scene, camera, pings, textCylinder: null };
       renderer.setSize(width, height);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.setClearColor(0x000000, 0);
 
       function randomFrontPosition(): import("three").Vector3 {
-        const theta = Math.PI * Math.random();
-        const phi = Math.PI * Math.random();
+        const theta = 0.2 * Math.PI + 0.6 * Math.PI * Math.random();
+        const phi = 0.2 * Math.PI + 0.6 * Math.PI * Math.random();
         const x = radius * Math.sin(phi) * Math.cos(theta);
         const y = radius * Math.cos(phi);
         const z = radius * Math.sin(phi) * Math.sin(theta);
@@ -127,10 +187,7 @@ export function HeroGlobe() {
         if (!scene || !camera || !pingLabelsContainer) return;
         if (pings.length >= MAX_PINGS) {
           const old = pings.shift()!;
-          scene.remove(old.dotMesh);
           scene.remove(old.rippleMesh);
-          old.dotMesh.geometry.dispose();
-          (old.dotMesh.material as THREE.Material).dispose();
           old.rippleMesh.geometry.dispose();
           (old.rippleMesh.material as THREE.Material).dispose();
           if (old.labelEl.parentNode) old.labelEl.parentNode.removeChild(old.labelEl);
@@ -140,21 +197,11 @@ export function HeroGlobe() {
         const name = PARTNER_NAMES[partnerIndexRef.current % PARTNER_NAMES.length];
         partnerIndexRef.current += 1;
 
-        const dotGeo = new THREE.SphereGeometry(0.025, 12, 12);
-        const dotMat = new THREE.MeshBasicMaterial({
-          color: WHOP_ORANGE,
-          transparent: true,
-          opacity: 0.95,
-        });
-        const dotMesh = new THREE.Mesh(dotGeo, dotMat);
-        dotMesh.position.copy(position);
-        scene.add(dotMesh);
-
-        const rippleGeo = new THREE.RingGeometry(0.03, 0.06, 32);
+        const rippleGeo = new THREE.RingGeometry(0.02, 0.04, 32);
         const rippleMat = new THREE.MeshBasicMaterial({
           color: WHOP_ORANGE,
           transparent: true,
-          opacity: 0.5,
+          opacity: 0.28,
           side: THREE.DoubleSide,
           depthWrite: false,
         });
@@ -166,14 +213,13 @@ export function HeroGlobe() {
         const labelEl = document.createElement("div");
         labelEl.textContent = name;
         labelEl.style.cssText =
-          "position:absolute;color:rgba(255,255,255,0.9);font-size:11px;font-weight:500;white-space:nowrap;pointer-events:none;transform:translate(-50%,-50%);transition:opacity 0.2s;";
+          "position:absolute;color:#fff;font-size:13px;font-weight:600;white-space:nowrap;pointer-events:none;transform:translate(-50%,-50%);transition:opacity 0.2s;background:rgba(20,18,18,0.8);padding:4px 10px;border-radius:12px;border:1px solid rgba(250,70,22,0.3);";
         pingLabelsContainer.appendChild(labelEl);
 
         pings.push({
           position,
           spawnTime: performance.now(),
           partnerName: name,
-          dotMesh,
           rippleMesh,
           labelEl,
         });
@@ -196,6 +242,8 @@ export function HeroGlobe() {
         const now = performance.now();
 
         if (mesh) mesh.rotation.y += 0.00075;
+        const refs = sceneRef.current;
+        if (refs?.textCylinder) refs.textCylinder.rotation.y = mesh!.rotation.y;
 
         if (now - lastPingTimeRef.current > 2000 + Math.random() * 1000) {
           lastPingTimeRef.current = now;
@@ -208,10 +256,7 @@ export function HeroGlobe() {
           const ping = pings[i];
           const age = now - ping.spawnTime;
           if (age > PING_DURATION_MS) {
-            scene!.remove(ping.dotMesh);
             scene!.remove(ping.rippleMesh);
-            ping.dotMesh.geometry.dispose();
-            (ping.dotMesh.material as THREE.Material).dispose();
             ping.rippleMesh.geometry.dispose();
             (ping.rippleMesh.material as THREE.Material).dispose();
             if (ping.labelEl.parentNode) ping.labelEl.parentNode.removeChild(ping.labelEl);
@@ -220,18 +265,18 @@ export function HeroGlobe() {
           }
           const rippleAge = Math.min(age, RIPPLE_DURATION_MS);
           const rippleScale = 1 + (rippleAge / RIPPLE_DURATION_MS) * 4;
-          const rippleOpacity = 0.5 * (1 - rippleAge / RIPPLE_DURATION_MS);
+          const rippleOpacity = 0.28 * (1 - rippleAge / RIPPLE_DURATION_MS);
           ping.rippleMesh.scale.setScalar(rippleScale);
           (ping.rippleMesh.material as THREE.MeshBasicMaterial).opacity = rippleOpacity;
           ping.rippleMesh.lookAt(camera!.position);
 
           const pos = ping.position.clone().project(camera!);
-          const x = ((pos.x + 1) / 2) * w;
-          const y = (1 - (pos.y + 1) / 2) * h;
+          const x = ((pos.x + 1) / 2) * w + 12;
+          const y = (1 - (pos.y + 1) / 2) * h + 10;
           ping.labelEl.style.left = `${x}px`;
           ping.labelEl.style.top = `${y}px`;
           if (age < 300) ping.labelEl.style.opacity = `${age / 300}`;
-          else if (age > 1800) ping.labelEl.style.opacity = `${(2300 - age) / 500}`;
+          else if (age > 2300) ping.labelEl.style.opacity = `${(PING_DURATION_MS - age) / 500}`;
           else ping.labelEl.style.opacity = "1";
         }
 
@@ -263,16 +308,17 @@ export function HeroGlobe() {
       const refs = sceneRef.current;
       if (refs) {
         refs.pings.forEach((p) => {
-          refs.scene.remove(p.dotMesh);
           refs.scene.remove(p.rippleMesh);
-          p.dotMesh.geometry.dispose();
-          (p.dotMesh.material as import("three").Material).dispose();
           p.rippleMesh.geometry.dispose();
           (p.rippleMesh.material as import("three").Material).dispose();
           if (p.labelEl.parentNode) p.labelEl.parentNode.removeChild(p.labelEl);
         });
         refs.mesh.geometry.dispose();
         (refs.mesh.material as import("three").Material).dispose();
+        if (refs.textCylinder) {
+          refs.textCylinder.geometry.dispose();
+          (refs.textCylinder.material as import("three").Material).dispose();
+        }
         refs.renderer.dispose();
         sceneRef.current = null;
       }
@@ -341,23 +387,7 @@ export function HeroGlobe() {
         }}
       />
 
-      {/* "Whop Partner Network" scrolling text overlay: above gradient, below logo; scrolls with globe */}
-      <div
-        className="globe-text-overlay pointer-events-none absolute left-1/2 top-[57%] z-[3] w-[60%] -translate-x-1/2 -translate-y-1/2 overflow-hidden"
-        style={{
-          maskImage:
-            "linear-gradient(to right, transparent 0, black 70px, black calc(100% - 70px), transparent 100%)",
-          WebkitMaskImage:
-            "linear-gradient(to right, transparent 0, black 70px, black calc(100% - 70px), transparent 100%)",
-        }}
-      >
-        <div className="globe-text-scroll flex whitespace-nowrap">
-          <span className="globe-text-label">Whop Partner Network</span>
-          <span className="globe-text-label">Whop Partner Network</span>
-        </div>
-      </div>
-
-      {/* Whop logo: above text overlay, centered on visible hemisphere (~top 32%) */}
+      {/* Whop logo: centered on visible hemisphere (~top 32%) */}
       <div
         className="absolute left-1/2 z-10 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center"
         style={{
