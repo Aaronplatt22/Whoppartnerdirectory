@@ -1,34 +1,31 @@
+import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
 
-const SESSION_COOKIE =
-  process.env.NODE_ENV === "production"
-    ? "__Secure-next-auth.session-token"
-    : "next-auth.session-token";
+export default withAuth(
+  function middleware(req) {
+    const token = req.nextauth.token;
+    const path = req.nextUrl.pathname;
 
-const protectedPrefixes = ["/admin", "/am", "/partner"];
-const publicPaths = ["/login", "/invite", "/apply", "/api/auth", "/partners", "/onboarding"];
+    // Role-based access control
+    if (path.startsWith("/admin") && token?.role !== "admin") {
+      return NextResponse.redirect(new URL("/login", req.url));
+    }
+    if (path.startsWith("/am") && token?.role !== "account_manager") {
+      return NextResponse.redirect(new URL("/login", req.url));
+    }
+    if (path.startsWith("/partner") && !path.startsWith("/partners") && token?.role !== "partner") {
+      return NextResponse.redirect(new URL("/login", req.url));
+    }
 
-function isProtected(pathname: string): boolean {
-  if (publicPaths.some((p) => pathname === p || pathname.startsWith(p + "/")))
-    return false;
-  return protectedPrefixes.some((p) => pathname === p || pathname.startsWith(p + "/"));
-}
-
-export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  if (!isProtected(pathname)) return NextResponse.next();
-  const token = request.cookies.get(SESSION_COOKIE)?.value;
-  if (!token) {
-    const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("callbackUrl", pathname);
-    return NextResponse.redirect(loginUrl);
+    return NextResponse.next();
+  },
+  {
+    callbacks: {
+      authorized: ({ token }) => !!token,
+    },
   }
-  return NextResponse.next();
-}
+);
 
 export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|icon.svg|.*\\.(?:png|jpg|jpeg|gif|webp)$).*)",
-  ],
+  matcher: ["/admin/:path*", "/am/:path*", "/partner/:path*"],
 };

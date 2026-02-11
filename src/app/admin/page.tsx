@@ -8,69 +8,88 @@ export default async function AdminDashboard() {
     prisma.partnerApplication.findMany(),
   ]);
 
-  const totalRevenue = deals.filter(d => d.stage === "Closed Won").reduce((sum, d) => sum + d.estimatedValue, 0);
-  const activePipeline = deals.filter(d => !["Closed Won", "Closed Lost"].includes(d.stage)).reduce((sum, d) => sum + d.estimatedValue, 0);
-  const closedDeals = deals.filter(d => ["Closed Won", "Closed Lost"].includes(d.stage));
-  const winRate = closedDeals.length > 0 ? Math.round((deals.filter(d => d.stage === "Closed Won").length / closedDeals.length) * 100) : 0;
+  const activeDeals = deals.filter(d => !["Closed Won", "Closed Lost"].includes(d.stage));
+  const pipelineValue = activeDeals.reduce((s, d) => s + d.estimatedValue, 0);
+  const wonDeals = deals.filter(d => d.stage === "Closed Won");
+  const lostDeals = deals.filter(d => d.stage === "Closed Lost");
+  const revenue = wonDeals.reduce((s, d) => s + d.estimatedValue, 0);
+  const winRate = (wonDeals.length + lostDeals.length) > 0
+    ? Math.round((wonDeals.length / (wonDeals.length + lostDeals.length)) * 100) : 0;
+
   const stages = ["New Opportunity", "In Discussion", "Qualified", "Long Term Nurture", "Closed Won", "Closed Lost"];
-  const stageCounts = stages.map(s => ({ stage: s, count: deals.filter(d => d.stage === s).length }));
+  const pendingApps = applications.filter(a => a.status === "pending");
+  const goldPartners = partners.filter(p => p.tier === "Gold");
+  const silverPartners = partners.filter(p => p.tier === "Silver");
+  const bronzePartners = partners.filter(p => p.tier === "Bronze");
 
   return (
     <div>
       <h1 className="text-2xl font-bold text-white mb-8">Admin Dashboard</h1>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatCard label="Total Partners" value={partners.length} sub="Active in directory" />
-        <StatCard label="Active Pipeline" value={"$" + activePipeline.toLocaleString()} sub={deals.filter(d => !["Closed Won","Closed Lost"].includes(d.stage)).length + " open deals"} />
-        <StatCard label="Revenue (Won)" value={"$" + totalRevenue.toLocaleString()} sub={deals.filter(d => d.stage === "Closed Won").length + " deals closed"} />
-        <StatCard label="Win Rate" value={winRate + "%"} sub="Of closed deals" />
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+          <p className="text-sm text-gray-400">Total Partners</p>
+          <p className="text-2xl font-bold text-white mt-1">{partners.length}</p>
+          <p className="text-xs text-gray-500 mt-1">Active in directory</p>
+        </div>
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+          <p className="text-sm text-gray-400">Active Pipeline</p>
+          <p className="text-2xl font-bold text-white mt-1">{"$" + pipelineValue.toLocaleString()}</p>
+          <p className="text-xs text-gray-500 mt-1">{activeDeals.length + " open deals"}</p>
+        </div>
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+          <p className="text-sm text-gray-400">Revenue (Won)</p>
+          <p className="text-2xl font-bold text-white mt-1">{"$" + revenue.toLocaleString()}</p>
+          <p className="text-xs text-gray-500 mt-1">{wonDeals.length + " deals closed"}</p>
+        </div>
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+          <p className="text-sm text-gray-400">Win Rate</p>
+          <p className="text-2xl font-bold text-white mt-1">{winRate + "%"}</p>
+          <p className="text-xs text-gray-500 mt-1">Of closed deals</p>
+        </div>
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
           <h2 className="text-lg font-semibold text-white mb-4">Pipeline by Stage</h2>
           <div className="space-y-3">
-            {stageCounts.map(({ stage, count }) => (
-              <div key={stage} className="flex items-center justify-between">
-                <span className="text-sm text-gray-400">{stage}</span>
-                <div className="flex items-center gap-3">
-                  <div className="w-32 bg-gray-800 rounded-full h-2">
-                    <div className="bg-blue-500 h-2 rounded-full" style={{ width: Math.min(100, (count / Math.max(1, deals.length)) * 300) + "%" }} />
-                  </div>
-                  <span className="text-sm font-medium text-white w-6 text-right">{count}</span>
+            {stages.map(stage => {
+              const count = deals.filter(d => d.stage === stage).length;
+              return (
+                <div key={stage} className="flex justify-between items-center">
+                  <span className="text-sm text-gray-300">{stage}</span>
+                  <span className="text-sm font-medium text-white">{count}</span>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
           <h2 className="text-lg font-semibold text-white mb-4">Team Overview</h2>
           <div className="space-y-3">
-            <InfoRow label="CAMs Active" value={cams.length} />
-            <InfoRow label="Pending Applications" value={applications.length} />
-            <InfoRow label="Gold Partners" value={partners.filter(p => p.tier === "Gold").length} />
-            <InfoRow label="Silver Partners" value={partners.filter(p => p.tier === "Silver").length} />
-            <InfoRow label="Bronze Partners" value={partners.filter(p => p.tier === "Bronze").length} />
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-300">CAMs Active</span>
+              <span className="text-sm font-medium text-white">{cams.length}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-300">Pending Applications</span>
+              <span className="text-sm font-medium text-white">{pendingApps.length}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-300">Gold Partners</span>
+              <span className="text-sm font-medium text-white">{goldPartners.length}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-300">Silver Partners</span>
+              <span className="text-sm font-medium text-white">{silverPartners.length}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-300">Bronze Partners</span>
+              <span className="text-sm font-medium text-white">{bronzePartners.length}</span>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-function StatCard({ label, value, sub }: { label: string; value: string | number; sub: string }) {
-  return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-      <p className="text-sm text-gray-400">{label}</p>
-      <p className="text-2xl font-bold text-white mt-1">{value}</p>
-      <p className="text-xs text-gray-500 mt-1">{sub}</p>
-    </div>
-  );
-}
-
-function InfoRow({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="flex justify-between items-center p-3 bg-gray-800/50 rounded-lg">
-      <span className="text-gray-300">{label}</span>
-      <span className="text-white font-semibold">{value}</span>
     </div>
   );
 }

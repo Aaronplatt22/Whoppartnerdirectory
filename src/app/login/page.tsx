@@ -1,110 +1,130 @@
 "use client";
-
-import { useState, Suspense } from "react";
-import { signIn } from "next-auth/react";
-import { useSearchParams } from "next/navigation";
+import { signIn, useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Heading, Text, TextField, Button, Card } from "frosted-ui";
 
-function LoginForm() {
-  const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") ?? "/partners";
+export default function LoginPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    if (session?.user) {
+      const role = (session.user as any).role;
+      if (role === "admin") router.push("/admin");
+      else if (role === "account_manager") router.push("/am");
+      else if (role === "partner") router.push("/partner");
+      else router.push("/partners");
+    }
+  }, [session, router]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError("");
     setLoading(true);
-    try {
-      const res = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
-        callbackUrl,
-      });
-      if (res?.error) {
-        setError("Invalid email or password.");
-        setLoading(false);
-        return;
-      }
-      if (res?.url) window.location.href = res.url;
-      else window.location.href = callbackUrl;
-    } catch {
-      setError("Something went wrong. Please try again.");
+    setError("");
+
+    const result = await signIn("credentials", {
+      email,
+      password,
+      redirect: false,
+    });
+
+    if (result?.error) {
+      setError("Invalid email or password.");
       setLoading(false);
     }
   }
 
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+        <div className="text-gray-400">Loading...</div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gray-2">
-      <div className="w-full max-w-sm">
-        <Card className="p-6 space-y-6">
-          <div>
-            <Heading size="5" className="mb-1">
-              Log in
-            </Heading>
-            <Text size="2" color="gray">
-              Whop team or partner directory
-            </Text>
-          </div>
+    <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-white">Whop Partner Hub</h1>
+          <p className="text-gray-400 mt-2">Sign in to your portal</p>
+        </div>
+
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8">
+          <h2 className="text-xl font-semibold text-white mb-6">Log in</h2>
+
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 mb-4 text-red-400 text-sm">
+              {error}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
-            <TextField.Root>
-              <TextField.Input
-                placeholder="Email"
+            <div>
+              <label className="block text-sm text-gray-400 mb-1.5">Email</label>
+              <input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={e => setEmail(e.target.value)}
                 required
-                autoComplete="email"
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white text-sm focus:border-blue-500 focus:outline-none"
+                placeholder="you@company.com"
               />
-            </TextField.Root>
-            <TextField.Root>
-              <TextField.Input
-                placeholder="Password"
+            </div>
+            <div>
+              <label className="block text-sm text-gray-400 mb-1.5">Password</label>
+              <input
                 type="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={e => setPassword(e.target.value)}
                 required
-                autoComplete="current-password"
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white text-sm focus:border-blue-500 focus:outline-none"
+                placeholder="••••••••"
               />
-            </TextField.Root>
-            {error && (
-              <Text size="2" color="red">
-                {error}
-              </Text>
-            )}
-            <Button
+            </div>
+            <button
               type="submit"
-              size="3"
-              color="orange"
-              className="w-full"
               disabled={loading}
+              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 text-white rounded-lg py-2.5 text-sm font-medium transition-colors"
             >
-              {loading ? "Signing in…" : "Sign in"}
-            </Button>
+              {loading ? "Signing in..." : "Sign in"}
+            </button>
           </form>
-          <Text size="1" color="gray">
-            No account? You need an invite from an admin to join the team or
-            partner directory.
-          </Text>
-        </Card>
-        <div className="mt-4 text-center">
-          <Link href="/partners" className="text-sm text-gray-11 hover:text-gray-12">
-            ← Back to directory
+
+          <div className="mt-6 pt-6 border-t border-gray-800">
+            <p className="text-xs text-gray-500 text-center mb-3">Demo Accounts</p>
+            <div className="space-y-2 text-xs">
+              <div className="flex justify-between bg-gray-800/50 rounded-lg px-3 py-2">
+                <span className="text-gray-400">Admin</span>
+                <span className="text-gray-300">admin@whop.com / admin123</span>
+              </div>
+              <div className="flex justify-between bg-gray-800/50 rounded-lg px-3 py-2">
+                <span className="text-gray-400">CAM</span>
+                <span className="text-gray-300">cam1@whop.com / cam123</span>
+              </div>
+              <div className="flex justify-between bg-gray-800/50 rounded-lg px-3 py-2">
+                <span className="text-gray-400">Partner</span>
+                <span className="text-gray-300">jake@pixelforge.io / partner123</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="text-center mt-6">
+          <Link href="/partners" className="text-sm text-gray-500 hover:text-gray-300">
+            ← Browse Public Directory
+          </Link>
+          <span className="text-gray-700 mx-3">•</span>
+          <Link href="/leaderboard" className="text-sm text-gray-500 hover:text-gray-300">
+            View Leaderboard
           </Link>
         </div>
       </div>
     </div>
-  );
-}
-
-export default function LoginPage() {
-  return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-2"><p className="text-gray-11">Loading…</p></div>}>
-      <LoginForm />
-    </Suspense>
   );
 }
