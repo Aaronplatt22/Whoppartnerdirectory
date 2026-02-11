@@ -7,8 +7,10 @@ const nav = [
   { href: "/admin/partners", label: "Partners", icon: "🤝" },
   { href: "/admin/deals", label: "Deals", icon: "💰" },
   { href: "/admin/cams", label: "CAM Management", icon: "👥" },
+  { href: "/admin/bounties", label: "Bounties", icon: "🎯" },
   { href: "/admin/invites", label: "Invites", icon: "✉️" },
   { href: "/admin/submissions", label: "Applications", icon: "📋" },
+  { href: "/leaderboard", label: "Leaderboard", icon: "🏆" },
 ];
 
 export default function AdminSidebar() {
