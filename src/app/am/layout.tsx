@@ -1,22 +1,19 @@
-import type { Metadata } from "next";
-import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
-import { AMLayoutClient } from "./layout-client";
+import AMSidebar from "./AMSidebar";
 
-export const metadata: Metadata = {
-  title: "AM Dashboard — Whop Partner Directory",
-  description:
-    "Account Manager tools: AI Partner Matcher and directory view with internal fields.",
-};
-
-export default async function AMLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function AMLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions);
-  if (!session) redirect("/login?callbackUrl=/am");
-  if (session.user.role === "partner") redirect("/partner");
-  return <AMLayoutClient>{children}</AMLayoutClient>;
+  if (!session || (session.user as any).role !== "account_manager") {
+    redirect("/login");
+  }
+  return (
+    <div className="flex h-screen bg-gray-950">
+      <AMSidebar userName={session.user?.name || "CAM"} />
+      <main className="flex-1 overflow-y-auto p-8">
+        {children}
+      </main>
+    </div>
+  );
 }

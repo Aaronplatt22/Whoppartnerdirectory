@@ -1,119 +1,125 @@
-"use client";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import Link from "next/link";
 
-import { useMemo, useState, useEffect } from "react";
-import { Heading, Text, Tabs, Select, Switch } from "frosted-ui";
-import { Inset } from "frosted-ui";
-import type { Partner, PartnerFilters } from "@/lib/types";
-import { useFilters } from "@/hooks/use-filters";
-import { FilterSidebar } from "@/components/ui/filter-sidebar";
-import { PartnerCard } from "@/components/ui/partner-card";
-import { MatchingBot } from "@/components/am/matching-bot";
+export default async function AMDashboard() {
+  const session = await getServerSession(authOptions);
+  const userId = (session?.user as any)?.id;
 
-const SORT_OPTIONS: { value: PartnerFilters["sortBy"]; label: string }[] = [
-  { value: "relevance", label: "Relevance" },
-  { value: "rating", label: "Rating" },
-  { value: "reviews", label: "Most Reviews" },
-  { value: "recent", label: "Recently Added" },
-];
+  const assignments = await prisma.camAssignment.findMany({
+    where: { camId: userId },
+    include: {
+      partner: {
+        include: {
+          deals: true,
+          _count: { select: { deals: true } },
+        },
+      },
+    },
+  });
 
-export default function AMPage() {
-  const [partners, setPartners] = useState<Partner[]>([]);
-  const [onlyAMRecommended, setOnlyAMRecommended] = useState(false);
+  const myDeals = await prisma.deal.findMany({
+    where: { camId: userId },
+    include: { partner: true },
+    orderBy: { updatedAt: "desc" },
+  });
 
-  useEffect(() => {
-    fetch("/api/partners")
-      .then((res) => res.json())
-      .then(setPartners)
-      .catch(() => setPartners([]));
-  }, []);
+  const notifications = await prisma.notification.findMany({
+    where: { userId, read: false },
+    orderBy: { createdAt: "desc" },
+    take: 5,
+  });
 
-  const { filters, setFilter, filteredPartners, totalCount } = useFilters(partners);
-
-  const amFilteredPartners = useMemo(() => {
-    if (!onlyAMRecommended) return filteredPartners;
-    return filteredPartners.filter((p) => p.recommendedFor.length > 0);
-  }, [filteredPartners, onlyAMRecommended]);
+  const activeDeals = myDeals.filter(d => !["Closed Won", "Closed Lost"].includes(d.stage));
+  const totalPipeline = activeDeals.reduce((s, d) => s + d.estimatedValue, 0);
+  const wonDeals = myDeals.filter(d => d.stage === "Closed Won");
+  const totalWon = wonDeals.reduce((s, d) => s + d.estimatedValue, 0);
 
   return (
-    <div className="flex-1 py-8 px-4">
-      <Inset side="all" clip="padding-box" className="max-w-6xl mx-auto">
-        <Heading size="6" className="mb-6">
-          AM Dashboard
-        </Heading>
+    <div>
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-white">{"Welcome back, " + (session?.user?.name?.split(" ")[0] || "CAM")}</h1>
+          <p className="text-gray-400 text-sm mt-1">Channel Account Manager</p>
+        </div>
+        {notifications.length > 0 && (
+          <Link href="/am/notifications" className="px-3 py-1.5 bg-red-500/20 text-red-400 rounded-lg text-sm font-medium">
+            {notifications.length + " new notifications"}
+          </Link>
+        )}
+      </div>
 
-        <Tabs.Root defaultValue="matcher" className="w-full">
-          <Tabs.List className="mb-6">
-            <Tabs.Trigger value="matcher">AI Partner Matcher</Tabs.Trigger>
-            <Tabs.Trigger value="directory">Directory (AM View)</Tabs.Trigger>
-          </Tabs.List>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+          <p className="text-sm text-gray-400">My Partners</p>
+          <p className="text-2xl font-bold text-white mt-1">{assignments.length}</p>
+          <p className="text-xs text-gray-500 mt-1">Assigned to you</p>
+        </div>
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+          <p className="text-sm text-gray-400">Active Pipeline</p>
+          <p className="text-2xl font-bold text-white mt-1">{"$" + totalPipeline.toLocaleString()}</p>
+          <p className="text-xs text-gray-500 mt-1">{activeDeals.length + " open deals"}</p>
+        </div>
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+          <p className="text-sm text-gray-400">Deals Won</p>
+          <p className="text-2xl font-bold text-white mt-1">{wonDeals.length}</p>
+          <p className="text-xs text-gray-500 mt-1">{"$" + totalWon.toLocaleString() + " total"}</p>
+        </div>
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+          <p className="text-sm text-gray-400">Total Deals</p>
+          <p className="text-2xl font-bold text-white mt-1">{myDeals.length}</p>
+          <p className="text-xs text-gray-500 mt-1">All time</p>
+        </div>
+      </div>
 
-          <Tabs.Content value="matcher">
-            <MatchingBot allPartners={partners} />
-          </Tabs.Content>
-
-          <Tabs.Content value="directory">
-            <div className="flex gap-8">
-              <div className="w-[280px] shrink-0 hidden lg:block">
-                <FilterSidebar
-                  filters={filters}
-                  onFilterChange={(next) => setFilter(next)}
-                  allPartners={partners}
-                />
-              </div>
-
-              <div className="flex-1 min-w-0">
-                <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-                  <div className="flex items-center gap-4">
-                    <Text size="2" color="gray">
-                      Showing {amFilteredPartners.length} partner{amFilteredPartners.length !== 1 ? "s" : ""}
-                    </Text>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <Switch
-                        checked={onlyAMRecommended}
-                        onCheckedChange={(checked) => setOnlyAMRecommended(!!checked)}
-                      />
-                      <Text size="2">Only AM-recommended</Text>
-                    </label>
-                  </div>
-                  <Select.Root
-                    value={filters.sortBy}
-                    onValueChange={(value) =>
-                      setFilter({ sortBy: value as PartnerFilters["sortBy"] })
-                    }
-                  >
-                    <Select.Trigger className="min-w-[140px]" />
-                    <Select.Content>
-                      {SORT_OPTIONS.map((opt) => (
-                        <Select.Item key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </Select.Item>
-                      ))}
-                    </Select.Content>
-                  </Select.Root>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold text-white">Recent Deals</h2>
+            <Link href="/am/pipeline" className="text-blue-400 text-sm hover:text-blue-300">View pipeline</Link>
+          </div>
+          <div className="space-y-3">
+            {myDeals.slice(0, 5).map(deal => (
+              <div key={deal.id} className="flex justify-between items-center p-3 bg-gray-800/50 rounded-lg">
+                <div>
+                  <p className="text-sm text-white font-medium">{deal.name}</p>
+                  <p className="text-xs text-gray-500">{deal.partner.name}</p>
                 </div>
-
-                {amFilteredPartners.length === 0 ? (
-                  <div className="py-16 text-center rounded-lg border border-gray-6 bg-gray-2/50">
-                    <Text size="2" color="gray">
-                      No partners match. Try adjusting filters or turn off &quot;Only AM-recommended&quot;.
-                    </Text>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {amFilteredPartners.map((partner) => (
-                      <PartnerCard
-                        key={partner.id}
-                        partner={partner}
-                        showInternalFields
-                      />
-                    ))}
-                  </div>
-                )}
+                <div className="text-right">
+                  <span className={"px-2 py-1 rounded-full text-xs " + (deal.stage === "Closed Won" ? "bg-emerald-500/20 text-emerald-400" : deal.stage === "Closed Lost" ? "bg-red-500/20 text-red-400" : deal.stage === "Qualified" ? "bg-green-500/20 text-green-400" : "bg-blue-500/20 text-blue-400")}>{deal.stage}</span>
+                  <p className="text-xs text-gray-500 mt-1">{"$" + deal.estimatedValue.toLocaleString()}</p>
+                </div>
               </div>
-            </div>
-          </Tabs.Content>
-        </Tabs.Root>
-      </Inset>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold text-white">My Partners</h2>
+            <Link href="/am/partners" className="text-blue-400 text-sm hover:text-blue-300">View all</Link>
+          </div>
+          <div className="space-y-3">
+            {assignments.map(a => {
+              const partnerActiveDeals = a.partner.deals.filter(d => !["Closed Won", "Closed Lost"].includes(d.stage));
+              const partnerPipeline = partnerActiveDeals.reduce((s, d) => s + d.estimatedValue, 0);
+              return (
+                <div key={a.id} className="flex justify-between items-center p-3 bg-gray-800/50 rounded-lg">
+                  <div>
+                    <p className="text-sm text-white font-medium">{a.partner.name}</p>
+                    <p className="text-xs text-gray-500">{a.partner.tier + " Tier • " + a.partner.partnerType}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-white font-medium">{"$" + partnerPipeline.toLocaleString()}</p>
+                    <p className="text-xs text-gray-500">{partnerActiveDeals.length + " active deals"}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
