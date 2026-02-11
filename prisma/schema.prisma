@@ -32,6 +32,14 @@ model Session {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -43,14 +51,10 @@ model User {
   accounts      Account[]
   sessions      Session[]
   partner       Partner?
-}
-
-model VerificationToken {
-  identifier String
-  token      String
-  expires    DateTime
-
-  @@unique([identifier, token])
+  camDeals       Deal[]          @relation("CamDeals")
+  dealActivities DealActivity[]
+  camAssignments CamAssignment[] @relation("CamAssignments")
+  notifications  Notification[]
 }
 
 model Invite {
@@ -93,12 +97,18 @@ model Partner {
   internalNotes      String   @default("")
   internalTags       String
   whopContactPerson  String   @default("")
-  lastEngagementDate  String   @default("")
+  lastEngagementDate String   @default("")
   recommendedFor     String
+  tier               String   @default("Bronze")
+  totalRevenue       Float    @default(0)
+  totalDeals         Int      @default(0)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
-  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user           User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  deals          Deal[]
+  camAssignments CamAssignment[]
+  bountyProgress BountyProgress[]
 }
 
 model PartnerApplication {
@@ -107,5 +117,90 @@ model PartnerApplication {
   email     String
   company   String?
   interest  String?
+  createdAt DateTime @default(now())
+}
+
+model Deal {
+  id                String    @id @default(cuid())
+  name              String
+  businessName      String
+  businessContact   String    @default("")
+  businessEmail     String    @default("")
+  estimatedValue    Float
+  monthlyProcessing Float     @default(0)
+  probability       Int       @default(20)
+  stage             String    @default("New Opportunity")
+  notes             String    @default("")
+  partnerId         String
+  partner           Partner   @relation(fields: [partnerId], references: [id])
+  camId             String?
+  cam               User?     @relation("CamDeals", fields: [camId], references: [id])
+  whopMerchantId    String?
+  firstPaymentDate  DateTime?
+  closedAt          DateTime?
+  closedReason      String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  activities        DealActivity[]
+}
+
+model DealActivity {
+  id        String   @id @default(cuid())
+  dealId    String
+  deal      Deal     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  type      String
+  content   String
+  createdAt DateTime @default(now())
+}
+
+model CamAssignment {
+  id        String   @id @default(cuid())
+  camId     String
+  cam       User     @relation("CamAssignments", fields: [camId], references: [id])
+  partnerId String
+  partner   Partner  @relation(fields: [partnerId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([camId, partnerId])
+}
+
+model Bounty {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  type        String
+  target      Float
+  reward      String
+  startDate   DateTime
+  endDate     DateTime
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  progress    BountyProgress[]
+}
+
+model BountyProgress {
+  id        String   @id @default(cuid())
+  bountyId  String
+  bounty    Bounty   @relation(fields: [bountyId], references: [id], onDelete: Cascade)
+  partnerId String
+  partner   Partner  @relation(fields: [partnerId], references: [id])
+  current   Float    @default(0)
+  completed Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@unique([bountyId, partnerId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  title     String
+  message   String
+  link      String?
+  read      Boolean  @default(false)
   createdAt DateTime @default(now())
 }
