@@ -1,10 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Heading, Text, Tabs, Select, Switch } from "frosted-ui";
 import { Inset } from "frosted-ui";
-import { mockPartners } from "@/data/mock-partners";
-import type { PartnerFilters } from "@/lib/types";
+import type { Partner, PartnerFilters } from "@/lib/types";
 import { useFilters } from "@/hooks/use-filters";
 import { FilterSidebar } from "@/components/ui/filter-sidebar";
 import { PartnerCard } from "@/components/ui/partner-card";
@@ -18,8 +17,17 @@ const SORT_OPTIONS: { value: PartnerFilters["sortBy"]; label: string }[] = [
 ];
 
 export default function AMPage() {
+  const [partners, setPartners] = useState<Partner[]>([]);
   const [onlyAMRecommended, setOnlyAMRecommended] = useState(false);
-  const { filters, setFilter, filteredPartners, totalCount } = useFilters();
+
+  useEffect(() => {
+    fetch("/api/partners")
+      .then((res) => res.json())
+      .then(setPartners)
+      .catch(() => setPartners([]));
+  }, []);
+
+  const { filters, setFilter, filteredPartners, totalCount } = useFilters(partners);
 
   const amFilteredPartners = useMemo(() => {
     if (!onlyAMRecommended) return filteredPartners;
@@ -40,7 +48,7 @@ export default function AMPage() {
           </Tabs.List>
 
           <Tabs.Content value="matcher">
-            <MatchingBot />
+            <MatchingBot allPartners={partners} />
           </Tabs.Content>
 
           <Tabs.Content value="directory">
@@ -49,7 +57,7 @@ export default function AMPage() {
                 <FilterSidebar
                   filters={filters}
                   onFilterChange={(next) => setFilter(next)}
-                  allPartners={mockPartners}
+                  allPartners={partners}
                 />
               </div>
 
@@ -73,7 +81,7 @@ export default function AMPage() {
                       setFilter({ sortBy: value as PartnerFilters["sortBy"] })
                     }
                   >
-                    <Select.Trigger size="2" variant="surface" color="gray" />
+                    <Select.Trigger className="min-w-[140px]" />
                     <Select.Content>
                       {SORT_OPTIONS.map((opt) => (
                         <Select.Item key={opt.value} value={opt.value}>

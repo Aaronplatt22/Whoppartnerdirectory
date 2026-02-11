@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { mockPartners } from "@/data/mock-partners";
+import { getPartnersFromDb } from "@/lib/partners-db";
 
-const SYSTEM_PROMPT = `You are an AI assistant for Whop Account Managers. You help match Whop creators with the best partners from our directory based on their specific needs.
+async function getSystemPrompt() {
+  const partners = await getPartnersFromDb();
+  return `You are an AI assistant for Whop Account Managers. You help match Whop creators with the best partners from our directory based on their specific needs.
 Here is our complete partner directory data:
-${JSON.stringify(mockPartners, null, 2)}
+${JSON.stringify(partners, null, 2)}
 When given a client's details, analyze their situation and recommend the top 3-5 partners. For each recommendation, provide:
 
 The partner's ID and name
@@ -26,6 +28,7 @@ Respond ONLY with valid JSON in this exact format, no markdown, no backticks:
     }
   ]
 }`;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,6 +37,8 @@ export async function POST(request: NextRequest) {
     if (!apiKey) {
       return NextResponse.json({ fallback: true }, { status: 200 });
     }
+
+    const SYSTEM_PROMPT = await getSystemPrompt();
 
     const userContent = `Match partners for this client:
 - Industry: ${body.industry ?? ""}

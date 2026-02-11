@@ -7,11 +7,9 @@ import {
   Select,
   Button,
   Checkbox,
-  Spinner,
   Skeleton,
   Card,
 } from "frosted-ui";
-import { mockPartners } from "@/data/mock-partners";
 import type { Partner } from "@/lib/types";
 import type { MatchInput, MatchResult, MatchRecommendation } from "@/lib/matching";
 import {
@@ -25,7 +23,7 @@ import { scorePartnersForQuery } from "@/lib/matching";
 import { MatchResultCard } from "./match-result-card";
 import { RecommendDialog } from "./recommend-dialog";
 
-export function MatchingBot() {
+export function MatchingBot({ allPartners }: { allPartners: Partner[] }) {
   const [industry, setIndustry] = useState("");
   const [monthlyRevenue, setMonthlyRevenue] = useState("");
   const [memberCount, setMemberCount] = useState("");
@@ -71,7 +69,7 @@ export function MatchingBot() {
         data = { fallback: true };
       }
       if (!res.ok || data.fallback) {
-        const scored = scorePartnersForQuery(input, mockPartners);
+        const scored = scorePartnersForQuery(input, allPartners);
         setResult({
           analysis: "Match based on your criteria (scoring engine).",
           recommendations: scored.map((s) => ({
@@ -92,7 +90,7 @@ export function MatchingBot() {
       }
     } catch {
       setError(true);
-      const scored = scorePartnersForQuery(input, mockPartners);
+      const scored = scorePartnersForQuery(input, allPartners);
       setResult({
         analysis: "Fallback results (API unavailable).",
         recommendations: scored.map((s) => ({
@@ -107,10 +105,10 @@ export function MatchingBot() {
     } finally {
       setLoading(false);
     }
-  }, [industry, monthlyRevenue, memberCount, challenges, budget, additionalContext]);
+  }, [industry, monthlyRevenue, memberCount, challenges, budget, additionalContext, allPartners]);
 
   const openRecommend = (rec: MatchRecommendation) => {
-    const partner = mockPartners.find((p) => p.id === rec.partnerId) ?? null;
+    const partner = allPartners.find((p) => p.id === rec.partnerId) ?? null;
     setRecommendPartner(partner);
     setRecommendIntro(rec.suggestedIntro);
     setRecommendOpen(true);
@@ -127,8 +125,8 @@ export function MatchingBot() {
             <label className="block text-sm font-medium text-gray-11 mb-1">
               Client Industry
             </label>
-            <Select.Root value={industry} onValueChange={setIndustry}>
-              <Select.Trigger size="2" variant="surface" className="w-full" placeholder="Select industry" />
+            <Select.Root value={industry} onValueChange={(v) => setIndustry(v ?? "")}>
+              <Select.Trigger className="w-full" />
               <Select.Content>
                 {INDUSTRIES.map((ind) => (
                   <Select.Item key={ind} value={ind}>
@@ -142,8 +140,8 @@ export function MatchingBot() {
             <label className="block text-sm font-medium text-gray-11 mb-1">
               Monthly Revenue
             </label>
-            <Select.Root value={monthlyRevenue} onValueChange={setMonthlyRevenue}>
-              <Select.Trigger size="2" variant="surface" className="w-full" placeholder="Select revenue" />
+            <Select.Root value={monthlyRevenue} onValueChange={(v) => setMonthlyRevenue(v ?? "")}>
+              <Select.Trigger className="w-full" />
               <Select.Content>
                 {REVENUE_OPTIONS.map((rev) => (
                   <Select.Item key={rev} value={rev}>
@@ -157,8 +155,8 @@ export function MatchingBot() {
             <label className="block text-sm font-medium text-gray-11 mb-1">
               Member Count
             </label>
-            <Select.Root value={memberCount} onValueChange={setMemberCount}>
-              <Select.Trigger size="2" variant="surface" className="w-full" placeholder="Select range" />
+            <Select.Root value={memberCount} onValueChange={(v) => setMemberCount(v ?? "")}>
+              <Select.Trigger className="w-full" />
               <Select.Content>
                 {MEMBER_COUNT_OPTIONS.map((m) => (
                   <Select.Item key={m} value={m}>
@@ -172,8 +170,8 @@ export function MatchingBot() {
             <label className="block text-sm font-medium text-gray-11 mb-1">
               Budget for Partner Services
             </label>
-            <Select.Root value={budget} onValueChange={(v) => setBudget(v as MatchInput["budget"])}>
-              <Select.Trigger size="2" variant="surface" className="w-full" placeholder="Select budget" />
+            <Select.Root value={budget} onValueChange={(v) => setBudget((v ?? budget) as MatchInput["budget"])}>
+              <Select.Trigger className="w-full" />
               <Select.Content>
                 {BUDGET_OPTIONS.map((b) => (
                   <Select.Item key={b.value} value={b.value}>
@@ -226,7 +224,7 @@ export function MatchingBot() {
           >
             {loading ? (
               <>
-                <Spinner size="2" className="mr-2" />
+                <span className="inline-block w-4 h-4 mr-2 border-2 border-current border-t-transparent rounded-full animate-spin" aria-hidden />
                 Finding partners...
               </>
             ) : (
@@ -296,7 +294,7 @@ export function MatchingBot() {
               >
                 <MatchResultCard
                   recommendation={rec}
-                  partner={mockPartners.find((p) => p.id === rec.partnerId) ?? null}
+                  partner={allPartners.find((p) => p.id === rec.partnerId) ?? null}
                   onSendIntroduction={() => openRecommend(rec)}
                 />
               </div>

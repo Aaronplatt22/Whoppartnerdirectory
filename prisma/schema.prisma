@@ -1,0 +1,111 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  role          String    @default("account_manager")
+  passwordHash  String?
+  accounts      Account[]
+  sessions      Session[]
+  partner       Partner?
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Invite {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  role      String
+  expiresAt DateTime
+  partnerId String?
+  createdAt DateTime @default(now())
+
+  @@index([token])
+}
+
+model Partner {
+  id                 String   @id @default(cuid())
+  userId             String?  @unique
+  slug               String   @unique
+  name               String
+  logo               String   @default("")
+  coverImage         String   @default("")
+  tagline            String
+  description        String
+  partnerType        String
+  categories         String
+  industries         String
+  featuredWhops      String
+  caseStudies        String
+  reviews            String
+  avgRating          Float    @default(0)
+  reviewCount        Int      @default(0)
+  priceRange         String
+  location           String   @default("")
+  timezone           String   @default("")
+  languages          String
+  responseTime       String
+  contactEmail       String
+  website            String   @default("")
+  calendlyLink       String?
+  internalNotes      String   @default("")
+  internalTags       String
+  whopContactPerson  String   @default("")
+  lastEngagementDate  String   @default("")
+  recommendedFor     String
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+model PartnerApplication {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  company   String?
+  interest  String?
+  createdAt DateTime @default(now())
+}

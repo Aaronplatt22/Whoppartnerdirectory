@@ -14,7 +14,7 @@ import {
 } from "@radix-ui/react-icons";
 import { cn } from "@/lib/utils";
 
-const ICON_MAP: Record<string, React.ComponentType<{ width?: number; height?: number; className?: string }>> = {
+const ICON_MAP: Record<string, React.ComponentType<{ width?: number | string; height?: number | string; className?: string }>> = {
   ChatBubbleIcon,
   DesktopIcon,
   RocketIcon,

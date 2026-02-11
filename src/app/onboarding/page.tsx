@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -108,7 +108,7 @@ function buildDraftPartner(form: {
   };
 }
 
-export default function OnboardingPage() {
+function OnboardingContent() {
   const searchParams = useSearchParams();
   const emailParam = searchParams.get("email") ?? "";
 
@@ -552,7 +552,7 @@ export default function OnboardingPage() {
                 <Text size="2" className="mb-2 block">
                   Timezone
                 </Text>
-                <Select.Root value={timezone} onValueChange={setTimezone}>
+                <Select.Root value={timezone} onValueChange={(v) => setTimezone(v ?? "")}>
                   <Select.Trigger className="w-full" />
                   <Select.Content>
                     {TIMEZONE_OPTIONS.map((t) => (
@@ -808,5 +808,13 @@ export default function OnboardingPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function OnboardingPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-2"><p className="text-gray-11">Loading…</p></div>}>
+      <OnboardingContent />
+    </Suspense>
   );
 }

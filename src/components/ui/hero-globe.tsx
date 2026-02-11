@@ -2,11 +2,9 @@
 
 import Image from "next/image";
 import { useEffect, useRef } from "react";
-import { mockPartners } from "@/data/mock-partners";
-
 const WHOP_ORANGE = 0xfa4616;
 const HERO_BG = "#141212";
-const PARTNER_NAMES = mockPartners.map((p) => p.name);
+const DEFAULT_PARTNER_NAMES = ["Whop Growth Labs", "Pixel Forge Studio", "Launch Partners"];
 const MAX_PINGS = 3;
 const PING_DURATION_MS = 2800; // 0.3s fade in + 2s hold + 0.5s fade out
 const RIPPLE_DURATION_MS = 1200;
@@ -19,7 +17,8 @@ interface PingState {
   labelEl: HTMLDivElement;
 }
 
-export function HeroGlobe() {
+export function HeroGlobe({ partnerNames }: { partnerNames?: string[] } = {}) {
+  const names = partnerNames?.length ? partnerNames : DEFAULT_PARTNER_NAMES;
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const pingLabelsRef = useRef<HTMLDivElement>(null);
@@ -138,8 +137,7 @@ export function HeroGlobe() {
         const textTexture = new THREE.CanvasTexture(textCanvas);
         textTexture.wrapS = THREE.RepeatWrapping;
         textTexture.anisotropy =
-          typeof renderer !== "undefined" &&
-          renderer.capabilities?.getMaxAnisotropy != null
+          renderer != null && renderer.capabilities?.getMaxAnisotropy != null
             ? renderer.capabilities.getMaxAnisotropy()
             : 16;
         textTexture.minFilter = THREE.LinearFilter;
@@ -190,12 +188,12 @@ export function HeroGlobe() {
           const old = pings.shift()!;
           scene.remove(old.rippleMesh);
           old.rippleMesh.geometry.dispose();
-          (old.rippleMesh.material as THREE.Material).dispose();
+          (old.rippleMesh.material as import("three").Material).dispose();
           if (old.labelEl.parentNode) old.labelEl.parentNode.removeChild(old.labelEl);
         }
         const position = randomFrontPosition();
         if (position.z < 0) return;
-        const name = PARTNER_NAMES[partnerIndexRef.current % PARTNER_NAMES.length];
+        const name = names[partnerIndexRef.current % names.length];
         partnerIndexRef.current += 1;
 
         const rippleGeo = new THREE.RingGeometry(0.02, 0.04, 32);
@@ -259,7 +257,7 @@ export function HeroGlobe() {
           if (age > PING_DURATION_MS) {
             scene!.remove(ping.rippleMesh);
             ping.rippleMesh.geometry.dispose();
-            (ping.rippleMesh.material as THREE.Material).dispose();
+            (ping.rippleMesh.material as import("three").Material).dispose();
             if (ping.labelEl.parentNode) ping.labelEl.parentNode.removeChild(ping.labelEl);
             pings.splice(i, 1);
             continue;
@@ -268,7 +266,7 @@ export function HeroGlobe() {
           const rippleScale = 1 + (rippleAge / RIPPLE_DURATION_MS) * 4;
           const rippleOpacity = 0.28 * (1 - rippleAge / RIPPLE_DURATION_MS);
           ping.rippleMesh.scale.setScalar(rippleScale);
-          (ping.rippleMesh.material as THREE.MeshBasicMaterial).opacity = rippleOpacity;
+          (ping.rippleMesh.material as import("three").MeshBasicMaterial).opacity = rippleOpacity;
           ping.rippleMesh.lookAt(camera!.position);
 
           const pos = ping.position.clone().project(camera!);

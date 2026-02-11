@@ -17,9 +17,11 @@ export default function NotFound() {
         <Text size="3" color="gray" className="mb-8 text-center max-w-md">
           Explore the directory to find the right partner for your Whop.
         </Text>
-        <Button size="3" color="orange" asChild className="btn-press">
-          <Link href="/partners">Explore Directory</Link>
-        </Button>
+        <Link href="/partners">
+          <Button size="3" color="orange" className="btn-press">
+            Explore Directory
+          </Button>
+        </Link>
       </div>
     </div>
   );

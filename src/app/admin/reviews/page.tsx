@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Heading,
@@ -15,7 +15,6 @@ import {
   AlertDialog,
 } from "frosted-ui";
 import { StarFilledIcon } from "@radix-ui/react-icons";
-import { mockPartners } from "@/data/mock-partners";
 import {
   buildReviewsForModeration,
   type ReviewForModeration,
@@ -55,9 +54,18 @@ export default function AdminReviewsPage() {
   const toast = useAdminToast();
   const [tab, setTab] = useState<ReviewTab>("all");
   const [sort, setSort] = useState<SortOption>("recent");
-  const [reviews, setReviews] = useState<ReviewForModeration[]>(() =>
-    buildReviewsForModeration(mockPartners)
-  );
+  const [partners, setPartners] = useState<Parameters<typeof buildReviewsForModeration>[0]>([]);
+  const [reviews, setReviews] = useState<ReviewForModeration[]>([]);
+
+  useEffect(() => {
+    fetch("/api/partners")
+      .then((res) => res.json())
+      .then((p: Parameters<typeof buildReviewsForModeration>[0]) => {
+        setPartners(p);
+        setReviews(buildReviewsForModeration(p));
+      })
+      .catch(() => setReviews([]));
+  }, []);
   const [removeReview, setRemoveReview] = useState<{
     review: ReviewForModeration;
     reason: string;
@@ -255,7 +263,9 @@ export default function AdminReviewsPage() {
               value={removeReview?.reason ?? REMOVE_REASONS[0]}
               onValueChange={(v) =>
                 setRemoveReview((prev) =>
-                  prev ? { ...prev, reason: v } : null
+                  prev
+                    ? { ...prev, reason: (v ?? REMOVE_REASONS[0]) as string }
+                    : null
                 )
               }
             >
@@ -270,12 +280,12 @@ export default function AdminReviewsPage() {
             </Select.Root>
           </div>
           <div className="flex justify-end gap-2 mt-4">
-            <AlertDialog.Cancel asChild>
+            <AlertDialog.Cancel>
               <Button variant="soft" color="gray">
                 Cancel
               </Button>
             </AlertDialog.Cancel>
-            <AlertDialog.Action asChild>
+            <AlertDialog.Action>
               <Button color="red" onClick={handleRemove}>
                 Remove Review
               </Button>
@@ -298,7 +308,7 @@ export default function AdminReviewsPage() {
             {viewDisputeReview?.disputeReason}
           </div>
           <div className="flex justify-end mt-4">
-            <Dialog.Close asChild>
+            <Dialog.Close>
               <Button variant="soft" color="gray">
                 Close
               </Button>

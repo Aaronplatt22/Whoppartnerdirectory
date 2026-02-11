@@ -2,8 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import type { PartnerFilters, PartnerType, PriceRange } from "@/lib/types";
-import { mockPartners } from "@/data/mock-partners";
+import type { Partner, PartnerFilters, PartnerType, PriceRange } from "@/lib/types";
 import { filterAndSortPartners } from "@/lib/partners";
 
 const SORT_OPTIONS = ["relevance", "rating", "reviews", "recent"] as const;
@@ -64,7 +63,7 @@ const DEFAULT_FILTERS: PartnerFilters = {
   sortBy: "relevance",
 };
 
-export function useFilters() {
+export function useFilters(partners: Partner[]) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -102,8 +101,8 @@ export function useFilters() {
   }, [updateUrl]);
 
   const filteredPartners = useMemo(
-    () => filterAndSortPartners(mockPartners, filters),
-    [filters]
+    () => filterAndSortPartners(partners, filters),
+    [partners, filters]
   );
 
   const totalCount = filteredPartners.length;

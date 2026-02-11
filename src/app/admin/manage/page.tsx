@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import {
   Heading,
@@ -21,7 +21,6 @@ import {
   Avatar,
 } from "frosted-ui";
 import { DotsHorizontalIcon, StarFilledIcon } from "@radix-ui/react-icons";
-import { mockPartners } from "@/data/mock-partners";
 import {
   FEATURED_PARTNER_IDS,
   PARTNER_LAST_UPDATED,
@@ -36,6 +35,7 @@ type SortKey = "name" | "type" | "rating" | "status" | "lastUpdated";
 
 export default function AdminManagePartnersPage() {
   const toast = useAdminToast();
+  const [partners, setPartners] = useState<Partner[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("All");
   const [sortKey, setSortKey] = useState<SortKey>("name");
@@ -50,6 +50,13 @@ export default function AdminManagePartnersPage() {
   const [archivePartner, setArchivePartner] = useState<Partner | null>(null);
   const [sheetPartner, setSheetPartner] = useState<Partner | null>(null);
 
+  useEffect(() => {
+    fetch("/api/partners")
+      .then((res) => res.json())
+      .then(setPartners)
+      .catch(() => setPartners([]));
+  }, []);
+
   const getStatus = (p: Partner): PartnerManagementStatus => {
     const s = partnerStatus[p.id] ?? "Active";
     if (featuredIds.has(p.id)) return "Featured";
@@ -57,7 +64,7 @@ export default function AdminManagePartnersPage() {
   };
 
   const filteredAndSorted = useMemo(() => {
-    let list = mockPartners.filter((p) => {
+    let list = partners.filter((p) => {
       const nameMatch = !search.trim() || p.name.toLowerCase().includes(search.toLowerCase());
       const status = getStatus(p);
       const statusMatch =
@@ -92,7 +99,7 @@ export default function AdminManagePartnersPage() {
       return sortAsc ? cmp : -cmp;
     });
     return list;
-  }, [search, statusFilter, sortKey, sortAsc, featuredIds, partnerStatus]);
+  }, [partners, search, statusFilter, sortKey, sortAsc, featuredIds, partnerStatus]);
 
   const toggleSort = (key: SortKey) => {
     setSortKey(key);
@@ -275,16 +282,18 @@ export default function AdminManagePartnersPage() {
                       <Table.Cell>{PARTNER_LAST_UPDATED[p.id] ?? "—"}</Table.Cell>
                       <Table.Cell>
                         <DropdownMenu.Root>
-                          <DropdownMenu.Trigger asChild>
+                          <DropdownMenu.Trigger>
                             <IconButton variant="ghost" size="1">
                               <DotsHorizontalIcon width={16} height={16} />
                             </IconButton>
                           </DropdownMenu.Trigger>
                           <DropdownMenu.Content align="end">
-                            <DropdownMenu.Item asChild>
-                              <Link href={`/partners/${p.slug}`} target="_blank">
-                                View Profile
-                              </Link>
+                            <DropdownMenu.Item
+                              onSelect={() =>
+                                window.open(`/partners/${p.slug}`, "_blank")
+                              }
+                            >
+                              View Profile
                             </DropdownMenu.Item>
                             <DropdownMenu.Item
                               onSelect={() => openEditNotes(p)}
@@ -340,7 +349,7 @@ export default function AdminManagePartnersPage() {
             className="w-full mt-3"
           />
           <div className="flex justify-end gap-2 mt-4">
-            <Dialog.Close asChild>
+            <Dialog.Close>
               <Button variant="soft" color="gray">
                 Cancel
               </Button>
@@ -362,12 +371,12 @@ export default function AdminManagePartnersPage() {
             you reactivate them.
           </AlertDialog.Description>
           <div className="flex justify-end gap-2 mt-4">
-            <AlertDialog.Cancel asChild>
+            <AlertDialog.Cancel>
               <Button variant="soft" color="gray">
                 Cancel
               </Button>
             </AlertDialog.Cancel>
-            <AlertDialog.Action asChild>
+            <AlertDialog.Action>
               <Button color="red" onClick={confirmSuspend}>
                 Suspend
               </Button>
@@ -388,12 +397,12 @@ export default function AdminManagePartnersPage() {
             live directory.
           </AlertDialog.Description>
           <div className="flex justify-end gap-2 mt-4">
-            <AlertDialog.Cancel asChild>
+            <AlertDialog.Cancel>
               <Button variant="soft" color="gray">
                 Cancel
               </Button>
             </AlertDialog.Cancel>
-            <AlertDialog.Action asChild>
+            <AlertDialog.Action>
               <Button color="red" onClick={confirmArchive}>
                 Archive
               </Button>
@@ -466,7 +475,7 @@ export default function AdminManagePartnersPage() {
                       View Full Profile
                     </Button>
                   </Link>
-                  <Sheet.Close asChild>
+                  <Sheet.Close>
                     <Button size="2" variant="soft" color="gray">
                       Close
                     </Button>

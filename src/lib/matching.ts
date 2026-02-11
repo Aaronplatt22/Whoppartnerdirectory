@@ -118,7 +118,7 @@ function generateReason(partner: Partner, input: MatchInput): string {
       partner.categories.includes(c)
     );
     if (partnerMatch.length > 0) {
-      parts.push(`Strong in: ${[...new Set(partnerMatch)].join(", ")}.`);
+      parts.push(`Strong in: ${Array.from(new Set(partnerMatch)).join(", ")}.`);
     }
   }
   parts.push(partner.tagline);

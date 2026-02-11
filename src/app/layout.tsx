@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "frosted-ui/styles.css";
 import { Theme } from "frosted-ui";
 import "./globals.css";
+import { Providers } from "@/components/providers";
 
 export const metadata: Metadata = {
   title: "Whop Partner Directory",
@@ -21,10 +22,8 @@ export default function RootLayout({
           appearance="dark"
           accentColor="orange"
           grayColor="sand"
-          radius="medium"
-          scaling="100%"
         >
-          {children}
+          <Providers>{children}</Providers>
         </Theme>
       </body>
     </html>

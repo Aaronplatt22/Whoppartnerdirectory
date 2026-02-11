@@ -195,7 +195,7 @@ function SubmissionCard({ submission }: { submission: MockSubmission }) {
             className="w-full mt-3"
           />
           <div className="flex justify-end gap-2 mt-4">
-            <Dialog.Close asChild>
+            <Dialog.Close>
               <Button variant="soft" color="gray">
                 Cancel
               </Button>
@@ -215,12 +215,12 @@ function SubmissionCard({ submission }: { submission: MockSubmission }) {
             This will reject the submission from {submission.partnerName}. They can submit again after making changes.
           </AlertDialog.Description>
           <div className="flex justify-end gap-2 mt-4">
-            <AlertDialog.Cancel asChild>
+            <AlertDialog.Cancel>
               <Button variant="soft" color="gray">
                 Cancel
               </Button>
             </AlertDialog.Cancel>
-            <AlertDialog.Action asChild>
+            <AlertDialog.Action>
               <Button color="red" onClick={handleReject}>
                 Reject
               </Button>

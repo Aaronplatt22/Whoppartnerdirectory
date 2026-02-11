@@ -116,9 +116,11 @@ export function MatchResultCard({
 
           <div className="flex flex-wrap gap-2">
             {partner && (
-              <Button asChild size="2" variant="soft" color="gray">
-                <Link href={`/partners/${partner.slug}?am=1`}>View Full Profile</Link>
-              </Button>
+              <Link href={`/partners/${partner.slug}?am=1`}>
+                <Button size="2" variant="soft" color="gray">
+                  View Full Profile
+                </Button>
+              </Link>
             )}
             <Button size="2" color="orange" variant="solid" onClick={onSendIntroduction}>
               Send Introduction

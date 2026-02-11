@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { mockPartners } from "@/data/mock-partners";
+import { getPartnerBySlugFromDb } from "@/lib/partners-db";
 
 type Props = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const partner = mockPartners.find((p) => p.slug === slug);
+  const partner = await getPartnerBySlugFromDb(slug);
   if (!partner) return { title: "Partner — Whop Partners" };
   return {
     title: `${partner.name} — Whop Partners`,
