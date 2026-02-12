@@ -117,9 +117,9 @@ model PartnerApplication {
   email     String
   company   String?
   interest  String?
+  status    String   @default("pending")
   createdAt DateTime @default(now())
 }
-
 model Deal {
   id                String    @id @default(cuid())
   name              String
